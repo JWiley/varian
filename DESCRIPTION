@@ -1,0 +1,19 @@
+Package: VM
+Type: Package
+Title: Variability Models in R
+Version: 0.1
+Date: 2014-07-30
+Author: Joshua F. Wiley
+Maintainer: Joshua F. Wiley <josh@elkhartgroup.com>
+Description: The VM package estimates the variability in a repeated
+    measure outcome and uses that as an outcome or a predictor in a second stage
+    model.
+License: LGPL-3
+Depends:
+    rstan,
+    parallel,
+    ggplot2,
+    gridExtra
+Imports:
+    MASS
+LazyLoad: yes
