@@ -3,21 +3,18 @@
 \alias{vm_diagnostics}
 \title{Plot diagnostics from a VM model}
 \usage{
-vm_diagnostics(object, useU = TRUE, plot = TRUE, ...)
+vm_diagnostics(object, plot = TRUE, ...)
 }
 \arguments{
 \item{object}{Results from running \code{vm_predict}.}
 
-\item{useU}{Logical indicating whether to plot the latent intercepts
-(defaults to \code{TRUE}).  Must set to \code{FALSE} if not available.}
-
 \item{plot}{Logical whether to plot the results or just return the grob
 for the plots.  Defaults to \code{TRUE}.}
 
-\item{\dots}{Additional arguments passed to \code{vmp_plot}}
+\item{\dots}{Additional arguments not currently used}
 }
 \value{
-A list containing the the \code{Summary} and the \code{Alpha} plot objects.
+A graphical object
 }
 \description{
 This function plots a variety of diagnostics from a Variability Model.

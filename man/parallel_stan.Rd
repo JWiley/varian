@@ -4,7 +4,8 @@
 \title{Wrapper for the stan function to parallelize chains}
 \usage{
 parallel_stan(model_code, standata, totaliter, warmup, thin = 1, chains, cl,
-  cores, seeds, modelfit, verbose = FALSE, ...)
+  cores, seeds, modelfit, verbose = FALSE, pars = NA, sample_file = NA,
+  diagnostic_file = NA, ...)
 }
 \arguments{
 \item{model_code}{A character string of Stan code}
@@ -44,10 +45,16 @@ compiling \code{model_code}.}
 \item{verbose}{A logical whether to print verbose output
 (defaults to \code{FALSE})}
 
+\item{pars}{Parameter names from Stan to store}
+
+\item{sample_file}{The sample file for Stan}
+
+\item{diagnostic_file}{The diagnostic file for Stan}
+
 \item{\dots}{Additional arguments passed on to \code{stan}}
 }
 \value{
-a named list with three elements, the \code{Results},
+a named list with three elements, the \code{results},
   compiled Stan \code{model}, and the random \code{seeds}
 }
 \description{

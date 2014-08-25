@@ -3,18 +3,29 @@
 \alias{vm_predict}
 \title{Use a Variability Model to predict another outcome}
 \usage{
-vm_predict(formula, var, data, totaliter = 2000, warmup = 1000,
-  chains = 1, useU = TRUE, inits = NULL, opts = list(SD_Tol = 0.01),
-  ...)
+vm_predict(y.formula, v.formula, m.formula, data, useU = TRUE,
+  totaliter = 2000, warmup = 1000, chains = 1, inits = NULL, modelfit,
+  opts = list(SD_Tol = 0.01), ...)
 }
 \arguments{
-\item{formula}{A formula describing the model to estimate}
+\item{y.formula}{A formula describing a model for the outcome.  At present,
+this must be a continuous, normally distributed variable.}
 
-\item{var}{The Level 1 outcome from which to estimate each Level 2 units residual
-standard deviation}
+\item{v.formula}{A formula describing a model for the variability. Note
+this must end with \code{ | ID}, where \code{ID} is the name of the
+ID variable in the dataset.  At present, this must be a continuous,
+normally distributed variable.}
+
+\item{m.formula}{An optional formula decribing a model for a mediatior variable.
+At present, this must be a continuous normally distributed variable.}
 
 \item{data}{A long data frame containing an both the Level 2 and Level 1 outcomes,
 as well as all covariates and an ID variable.}
+
+\item{useU}{A logical value whether the latent intercept estimated in Stage 1 should
+also be used as a predictor.  Defaults to \code{TRUE}.  Note if there is a
+mediator as well as main outcome, the latent intercepts will be used as a predictor
+for both.}
 
 \item{totaliter}{The total number of iterations to be used (not including the
 warmup iterations), these are distributed equally across multiple independent
@@ -26,12 +37,11 @@ that will be used for inference.}
 
 \item{chains}{The number of independent chains to run (default to 1).}
 
-\item{useU}{A logical value whether the latent intercept estimated in Stage 1 should
-also be used as a predictor.  Defaults to \code{TRUE}.}
-
 \item{inits}{Initial values passed on to \code{stan}.  If \code{NULL}, the default,
 initial values are estimated means, standard deviations, and coefficients from a
 single level linear regression.}
+
+\item{modelfit}{A compiled Stan model (e.g., from a previous run).}
 
 \item{opts}{A list giving options.  Currently only \code{SD_Tol} which controls
 the tolerance for how small a variables standard deviation may be without
@@ -41,9 +51,9 @@ any variability are included as predictors).}
 \item{\dots}{Additional arguments passed to \code{stan}.}
 }
 \value{
-A named list containing the model \code{Output},
-  the \code{variableNames}, the \code{data}, and the initial function
-  \code{.call}.
+A named list containing the model \code{results}, the \code{model},
+  the \code{variable.names}, the \code{data}, the random \code{seeds},
+  and the initial function \code{.call}.
 }
 \description{
 This function uses a linear mixed effects model that assumes the level 1 residual

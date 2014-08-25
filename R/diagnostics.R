@@ -107,20 +107,21 @@ vmp_plot <- function(alpha, useU = TRUE, plot = TRUE, digits = 3, ...) {
 #' are also shown.
 #'
 #' @param object Results from running \code{vm_predict}.
-#' @param useU Logical indicating whether to plot the latent intercepts
-#'   (defaults to \code{TRUE}).  Must set to \code{FALSE} if not available.
 #' @param plot Logical whether to plot the results or just return the grob
 #'   for the plots.  Defaults to \code{TRUE}.
-#' @param \dots Additional arguments passed to \code{vmp_plot}
-#' @return A list containing the the \code{Summary} and the \code{Alpha} plot objects.
+#' @param \dots Additional arguments not currently used
+#' @return A graphical object
 #' @author Joshua F. Wiley <josh@@elkhartgroup.com>
 #' @export
 #' @keywords hplot
 #' @examples
 #' # Make Me!
-vm_diagnostics <- function(object, useU = TRUE, plot=TRUE, ...) {
+vm_diagnostics <- function(object, plot=TRUE, ...) {
   if (inherits(object, "vmp")) {
-    object <- object$Output$Results
+    object <- object$results
+  }
+  if (inherits(object, "vmp_med")) {
+    object <- object$results
   }
 
   res.s <- as.data.frame(summary(object)$summary)
@@ -141,7 +142,7 @@ vm_diagnostics <- function(object, useU = TRUE, plot=TRUE, ...) {
     labs(x = "N_Effective for all parameters") +
     theme_classic()
 
-  sigma <- as.data.frame(t(apply(est$Sigma_Y1, 2, quantile, probs = c(.025, .5, .975), na.rm=TRUE)))
+  sigma <- as.data.frame(t(apply(est$Sigma_V, 2, quantile, probs = c(.025, .5, .975), na.rm=TRUE)))
   colnames(sigma) <- c("LL", "Median", "UL")
   sigma <- sigma[order(sigma[, "Median"]), ]
   sigma$Index <- 1:nrow(sigma)
@@ -181,17 +182,9 @@ vm_diagnostics <- function(object, useU = TRUE, plot=TRUE, ...) {
     p.sigma,
     p.u, ncol = 1)
 
-  p.alpha <- vmp_plot(est$alpha, useU = useU, plot = FALSE, ...)
-
   if (plot) {
-    if (interactive() && dev.interactive(TRUE)) {
-      oldPar <- par(no.readonly = TRUE)
-      on.exit(par(oldPar))
-      par(ask = TRUE)
-    }
     print(p.diag)
-    print(p.alpha$Combined)
   }
 
-  invisible(list(Summary = p.diag, Alpha = p.alpha))
+  invisible(p.diag)
 }

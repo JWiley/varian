@@ -15,5 +15,6 @@ Depends:
     ggplot2,
     gridExtra
 Imports:
-    MASS
+    MASS,
+    Formula
 LazyLoad: yes
