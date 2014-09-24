@@ -1,21 +1,21 @@
-#' @title Variability Models in R
+#' @title Variability Analysis in R
 #' @docType package
-#' @name VM
+#' @name varian
 #'
-#' @description The VM package estimates the variability in a repeated
+#' @description The varian package estimates the variability in a repeated
 #'   measure outcome and uses that as an outcome or a predictor in a second stage
 #'   model.
 #'
-#' @details The VM package has one primary function:
+#' @details The varian package has one primary function:
 #' \enumerate{
 #'   \item \code{\link{vm_predict}}
 #' }
 #'
 #' \tabular{ll}{
-#' Package: \tab VM\cr
+#' Package: \tab varian\cr
 #' Type: \tab Package\cr
-#' Version: \tab 0.6-2\cr
-#' Date: \tab 2013-10-24\cr
+#' Version: \tab 0.1.1\cr
+#' Date: \tab 2014-09-09\cr
 #' License: \tab LGPL-3\cr
 #' LazyLoad: \tab yes\cr
 #' }

@@ -203,7 +203,6 @@ empirical_pvalue <- function(x) {
   out
 }
 
-
 #' Simulate a Gamma Variability Model
 #'
 #' This function facilitates simulation of a Gamma Variability Model
@@ -253,7 +252,6 @@ simulate_gvm <- function(n, k, mu, mu.sigma, sigma.shape, sigma.rate, seed = 534
     sigma.shape, sigma.rate, sigma = sigma, seed)
 }
 
-
 #' Wrapper for the stan function to parallelize chains
 #'
 #' This funcntion takes Stan model code, compiles the Stan model,
@@ -297,7 +295,7 @@ simulate_gvm <- function(n, k, mu, mu.sigma, sigma.shape, sigma.rate, seed = 534
 #' @examples
 #' # Make me!
 parallel_stan <- function(model_code, standata, totaliter, warmup, thin = 1,
-                  chains, cl, cores, seeds, modelfit, verbose=FALSE,
+                  chains, cl, cores, seeds, modelfit, verbose = FALSE,
                   pars = NA, sample_file=NA, diagnostic_file = NA, ...) {
   if (missing(cl)) {
     if (missing(cores)) {
@@ -344,7 +342,9 @@ parallel_stan <- function(model_code, standata, totaliter, warmup, thin = 1,
   if (chains > 1) {
     if (verbose) cat("Combining chains\n")
 
-    stanres <- try(sflist2stanfit(stanres))
+    stanres <- sflist2stanfit(stanres)
+  } else {
+    stanres <- stanres[[1]]
   }
 
   list(results = stanres, model = stanmodel, seeds = seeds)

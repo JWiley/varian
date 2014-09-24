@@ -1,3 +1,16 @@
+## # Currently Available
+## V -> Y
+## V -> M -> Y
+## V
+## # Planned
+## X -> V
+## X -> V -> Y
+## X -> M -> V
+
+## varian(v, y, m, design =
+##   c("V -> Y", "V -> M -> Y", "V",
+##     "X -> V", "X -> V -> Y", "X -> M -> V"))
+
 ## data {
 ##     int<lower=1> N;
 ##     real rrt[N];                    //outcome
@@ -49,7 +62,7 @@
 
 
 
-#' Create a Stan class VM model
+#' Create a Stan class VM object
 #'
 #' Internal function to create and compile a Stan model.
 #'
@@ -69,9 +82,17 @@
 #'   test3 <- vm_stan("vm_predict_mediation", useU=TRUE)
 #'   test4 <- vm_stan("vm_predict_mediation", useU=FALSE)
 #' }
-vm_stan <- function(type = c("vm_predict", "vm_predict_mediation"), useU=TRUE, ...) {
+vm_stan <- function(design = c("V -> Y", "V -> M -> Y", "V",
+    "X -> V", "X -> V -> Y", "X -> M -> V"), useU=TRUE, ...) {
 
-  type <- match.arg(type)
+  design <- match.arg(design)
+  if (!design %in% c("V -> Y", "V -> M -> Y", "V")) {
+    stop("Currently only V -> Y, V -> M -> Y, and V are implemented")
+  }
+
+  ## show the priors
+  ## x <- seq(.001, 50, by = .01)
+  ## plot(x, dcauchy(x, 0, 20), type = "l")
 
   model.core.V <- list(
     data = "
@@ -110,10 +131,10 @@ vm_stan <- function(type = c("vm_predict", "vm_predict_mediation"), useU=TRUE, .
       VB ~ normal(0, 1000);
       U ~ normal(0, sigma_U);
       // Priors for Stage 1 scale of random location
-      sigma_U ~ cauchy(0, 5);
+      sigma_U ~ cauchy(0, 10);
       // Priors for Stage 1 Scale
-      shape ~ cauchy(0, 5);
-      rate ~ cauchy(0, 5);
+      shape ~ cauchy(0, 10);
+      rate ~ cauchy(0, 10);
       // Model for Stage 1 Scale
       Sigma_V ~ gamma(shape, rate);
     ",
@@ -151,7 +172,7 @@ vm_stan <- function(type = c("vm_predict", "vm_predict_mediation"), useU=TRUE, .
       YB ~ normal(0, 1000);
       Yalpha ~ normal(0, 1000);
       // Priors for Y scale
-      sigma_Y ~ cauchy(0, 5);
+      sigma_Y ~ cauchy(0, 10);
     ",
     model.statements = "
       // Likelihood for Y
@@ -188,7 +209,7 @@ vm_stan <- function(type = c("vm_predict", "vm_predict_mediation"), useU=TRUE, .
       MB ~ normal(0, 1000);
       Malpha ~ normal(0, 1000);
       // Priors for M scale
-      sigma_M ~ cauchy(0, 5);
+      sigma_M ~ cauchy(0, 10);
     ",
     model.statements = "
       // Likelihood for M
@@ -227,15 +248,89 @@ vm_stan <- function(type = c("vm_predict", "vm_predict_mediation"), useU=TRUE, .
        model.declarations, model.statements))
   }
 
-  model <- switch(type,
-    vm_predict =  model_builder(model.core.V, model.core.Y),
-    vm_predict_mediation = model_builder(model.core.V, model.core.Y, model.core.M)
-  )
+
+  model <- switch(design,
+    `V -> Y` = model_builder(model.core.V, model.core.Y),
+    `V -> M -> Y` = model_builder(model.core.V, model.core.Y, model.core.M),
+    `V` = model_builder(model.core.V))
 
   stan_model(model_code = model, save_dso=TRUE, ...)
 }
 
-#' Use a Variability Model to predict another outcome
+#' Calculate Initial Values for Stan VM Model
+#'
+#' Internal function used to get rough starting values for a
+#' variability model in Stan.  Uses inidivudal standard deviations, means,
+#' and linear regressions.
+#'
+#' @param stan.data A list containing the data to be passed to Stan
+#' @param design The type of model
+#' @param useU whether to include the random intercepts
+#' @param \dots Additional arguments (not currently used)
+#'
+#' @return A named list containing the initial values for Stan.
+#' @author Joshua F. Wiley <josh@@elkhartgroup.com>
+#' @keywords models
+#' @examples
+#' # make me!
+stan_inits <- function(stan.data, design = c("V -> Y", "V -> M -> Y", "V",
+    "X -> V", "X -> V -> Y", "X -> M -> V"), useU, ...) {
+
+  design <- match.arg(design)
+  if (!design %in% c("V -> Y", "V -> M -> Y", "V")) {
+    stop("Currently only V -> Y, V -> M -> Y, and V are implemented")
+  }
+
+  # V inits
+  rg <- with(stan.data, res_gamma(V, VID))
+
+  out <- with(stan.data, list(
+    VB = as.array(coef(lm.fit(VX, V))),
+    U = as.array(by_id(V, VID, mean, FALSE, na.rm=TRUE)-mean(V, na.rm=TRUE)),
+    shape = rg$alpha,
+    rate = rg$beta,
+    Sigma_V = as.array(sd_id(V, VID, FALSE))
+  ))
+
+  index <- (out$Sigma_V == 0) | is.na(out$Sigma_V)
+  # if zero or missing, replace with nonmissing minima
+  out$Sigma_V[index] <- min(out$Sigma_V[!index], na.rm=TRUE)
+
+  out$sigma_U <- sd(out$U, na.rm=TRUE)
+
+  dv_init <- function(X, dv, k) {
+      b <- coef(lm.fit(X, dv))
+      s.dv <- sd(dv, na.rm=TRUE)
+      list(sigma_dv = s.dv,
+           b = as.array(b[1:k]),
+           alpha = as.array(b[(k + 1):length(b)]))
+  }
+
+  if (useU) {
+    tmpV <- cbind(Res = out$Sigma_V, U = out$U)
+  } else {
+    tmpV <- cbind(Res = out$Sigma_V)
+  }
+
+  out <- c(out, switch(design,
+    `V -> Y` = {
+      tmpY <- with(stan.data, dv_init(cbind(YX, tmpV), Y, ncol(YX)))
+      names(tmpY) <- c("sigma_Y", "YB", "Yalpha")
+      tmpY
+    },
+    `V -> M -> Y` = {
+      tmpY <- with(stan.data, dv_init(cbind(YX, tmpV), Y, ncol(YX)))
+      names(tmpY) <- c("sigma_Y", "YB", "Yalpha")
+      tmpM <- with(stan.data, dv_init(cbind(MX, tmpV), M, ncol(MX)))
+      names(tmpM) <- c("sigma_M", "MB", "Malpha")
+      c(tmpY, tmpM)
+    },
+    `V` = c()))
+
+  return(out)
+}
+
+#' Variablity Analysis using a Bayesian Variability Model (VM)
 #'
 #' This function uses a linear mixed effects model that assumes the level 1 residual
 #' variance varies by Level 2 units.  That is rather than assuming a homogenous residual
@@ -256,6 +351,10 @@ vm_stan <- function(type = c("vm_predict", "vm_predict_mediation"), useU=TRUE, .
 #'   At present, this must be a continuous normally distributed variable.
 #' @param data A long data frame containing an both the Level 2 and Level 1 outcomes,
 #'   as well as all covariates and an ID variable.
+#' @param design A character string indicating the type of model to be run.  One of
+#'   \dQuote{V -> Y} for variability predicting an outcome,
+#'   \dQuote{V -> M -> Y} for mediation of variability on an outcome,
+#'   \dQuote{V} to take posterior samples of individual variability estimates alone.
 #' @param useU A logical value whether the latent intercept estimated in Stage 1 should
 #'   also be used as a predictor.  Defaults to \code{TRUE}.  Note if there is a
 #'   mediator as well as main outcome, the latent intercepts will be used as a predictor
@@ -296,7 +395,7 @@ vm_stan <- function(type = c("vm_predict", "vm_predict_mediation"), useU=TRUE, .
 #'       x2 = x2[Data$ID2, 2],
 #'       ID = Data$ID2)
 #'   })
-#'   m <- vm_predict(y2 ~ x1 + x2, y ~ 1 | ID, data = sim.data,
+#'   m <- varian(y2 ~ x1 + x2, y ~ 1 | ID, data = sim.data, design = "V -> Y",
 #'     totaliter = 10000, warmup = 1500, thin = 10, chains = 4, verbose=TRUE)
 #'
 #'   # check diagnostics
@@ -314,16 +413,24 @@ vm_stan <- function(type = c("vm_predict", "vm_predict_mediation"), useU=TRUE, .
 #'       ID = Data$ID2)
 #'   })
 #'   # warning: may take several minutes
-#'   m2 <- vm_predict(y2 ~ x1 + x2 + y + ID, var = "y", data = sim.data2,
+#'   m2 <- vm_predict(y2 ~ x1 + x2, y ~ 1 | ID, data = sim.data2, design = "V -> Y",
 #'     totaliter = 10000, warmup = 1500, thin = 10, chains = 4, verbose=TRUE)
 #'   # check diagnostics
 #'   vm_diagnostics(m2)
 #' }
-vm_predict <- function(y.formula, v.formula, m.formula, data, useU = TRUE,
-                       totaliter = 2000, warmup = 1000, chains = 1,
-                       inits = NULL, modelfit, opts = list(SD_Tol = .01), ...) {
+varian <- function(y.formula, v.formula, m.formula, data,
+                   design = c("V -> Y", "V -> M -> Y", "V",
+                              "X -> V", "X -> V -> Y", "X -> M -> V"),
+                   useU = TRUE, totaliter = 2000, warmup = 1000, chains = 1,
+                   inits = NULL, modelfit, opts = list(SD_Tol = .01, pars = NULL), ...) {
+
+
+  design <- match.arg(design)
+  if (!design %in% c("V -> Y", "V -> M -> Y", "V")) {
+    stop("Currently only V -> Y, V -> M -> Y, and V are implemented")
+  }
+
   stopifnot(is.data.frame(data))
-  stopifnot(!missing(y.formula))
   stopifnot(!missing(v.formula))
   stopifnot(is.logical(useU))
 
@@ -335,18 +442,21 @@ vm_predict <- function(y.formula, v.formula, m.formula, data, useU = TRUE,
   # drop any missing levels to avoid redudant dummy codes in model matrix
   data <- droplevels(data)
 
-  var.names <- list(
-    Y = all.vars(terms(as.Formula(y.formula), lhs = 1, rhs = -1)),
-    V = all.vars(terms(as.Formula(v.formula), lhs = 1, rhs = -c(1, 2))),
-    VID = all.vars(terms(as.Formula(v.formula), lhs = -1, rhs = 2))
-  )
+  var.names <- c(list(
+      V = all.vars(terms(as.Formula(v.formula), lhs = 1, rhs = -c(1, 2))),
+      VID = all.vars(terms(as.Formula(v.formula), lhs = -1, rhs = 2))),
+      switch(design,
+        `V -> Y` = list(
+          Y = all.vars(terms(as.Formula(y.formula), lhs = 1, rhs = -1))),
+        `V -> M -> Y` = list(
+          Y = all.vars(terms(as.Formula(y.formula), lhs = 1, rhs = -1)),
+          M = all.vars(terms(as.Formula(m.formula), lhs = 1, rhs = -c(1, 2)))),
+        `V` = list()))
 
-  if (med) {
-    all.formula <- as.Formula(y.formula, m.formula, v.formula)
-    var.names$M <- all.vars(terms(as.Formula(m.formula), lhs = 1, rhs = -c(1, 2)))
-  } else {
-    all.formula <- as.Formula(y.formula, v.formula)
-  }
+  all.formula <- switch(design,
+    `V -> Y` = as.Formula(y.formula, v.formula),
+    `V -> M -> Y` = as.Formula(y.formula, v.formula, m.formula),
+    `V` = as.Formula(v.formula))
 
   # make sure ID is a numeric/integer or a factor
   stopifnot(class(data[, var.names$VID]) %in% c("numeric", "integer", "factor"))
@@ -382,42 +492,49 @@ vm_predict <- function(y.formula, v.formula, m.formula, data, useU = TRUE,
                InternalID = tmp2[, 2])
   })
 
-  y.mm <- model.matrix(y.formula, data = mf)
-  v.mm <- model.matrix(as.Formula(v.formula), data = mf, rhs = 1)
-  if (med) {
-    m.mm <- model.matrix(m.formula, data = mf)
-  }
 
-  V <- mf[, var.names$V]
-  VX <- v.mm
-  VID <- mf[, var.names$VID]
+  vars <- list(V = mf[, var.names$V], VID = mf[, var.names$VID])
+  keep.obs <- !duplicated(vars$VID)
 
-  keep.obs <- !duplicated(VID)
+  vars <- c(vars, switch(design,
+            `V -> Y` = list(
+              Y = mf[keep.obs, var.names$Y]),
+            `V -> M -> Y` = list(
+              Y = mf[keep.obs, var.names$Y],
+              M = mf[keep.obs, var.names$M]),
+            `V` = list()))
 
-  Y <- mf[keep.obs, var.names$Y]
-  YX <- y.mm[keep.obs, , drop=FALSE]
 
-  var.names$YX <- colnames(y.mm)
-  var.names$VX <- colnames(v.mm)
+  mm <- c(list(V = model.matrix(as.Formula(v.formula), data = mf, rhs = 1)),
+          switch(design,
+            `V -> Y` = list(
+              Y = model.matrix(y.formula, data = mf)[keep.obs, , drop = FALSE]),
+            `V -> M -> Y` = list(
+              Y = model.matrix(y.formula, data = mf)[keep.obs, , drop = FALSE],
+              M = model.matrix(m.formula, data = mf)[keep.obs, , drop = FALSE]),
+            `V` = list()))
 
-  if (med) {
-    M <- mf[keep.obs, var.names$M]
-    MX <- m.mm[keep.obs, , drop = FALSE]
-    var.names$MX <- colnames(m.mm)
-  }
+  var.names <- c(var.names, list(VX <- colnames(mm$V)),
+                 switch(design,
+                   `V -> Y` = list(
+                     YX = colnames(mm$Y)),
+                   `V -> M -> Y` = list(
+                     YX = colnames(mm$Y),
+                     MX = colnames(mm$M)),
+                   `V` = list()))
 
   # Code to check the scaling of variables
-  if (med) {
-    v.sds <- c(sd(Y, na.rm=TRUE), sd(V, na.rm=TRUE), sd(M, na.rm=TRUE),
-             apply(YX, 2, sd, na.rm=TRUE), apply(VX, 2, sd, na.rm=TRUE), apply(MX, 2, sd, na.rm=TRUE))
-    names(v.sds) <- c(var.names$Y, var.names$V, var.names$M,
-                      var.names$YX, var.names$VX, var.names$MX)
-  } else {
-    v.sds <- c(sd(Y, na.rm=TRUE), sd(V, na.rm=TRUE),
-             apply(YX, 2, sd, na.rm=TRUE), apply(VX, 2, sd, na.rm=TRUE))
-    names(v.sds) <- c(var.names$Y, var.names$V,
-                      var.names$YX, var.names$VX)
-  }
+  v.sds <- switch(design,
+    `V -> Y` = c(sd(vars$Y, na.rm=TRUE), sd(vars$V, na.rm=TRUE),
+             apply(mm$Y, 2, sd, na.rm=TRUE), apply(mm$V, 2, sd, na.rm=TRUE)),
+    `V -> M -> Y` = c(sd(vars$Y, na.rm=TRUE), sd(vars$V, na.rm=TRUE), sd(vars$M, na.rm=TRUE),
+             apply(mm$Y, 2, sd, na.rm=TRUE), apply(mm$V, 2, sd, na.rm=TRUE), apply(mm$M, 2, sd, na.rm=TRUE)),
+    `V` = c(sd(vars$V, na.rm=TRUE), apply(mm$V, 2, sd, na.rm=TRUE)))
+
+  names(v.sds) <- switch(design,
+    `V -> Y` = with(var.names, c(Y, V, YX, VX)),
+    `V -> M -> Y` = with(var.names, c(Y, V, M, YX, VX, MX)),
+    `V` = with(var.names, c(V, VX)))
 
   v.sds <- v.sds[names(v.sds) != "(Intercept)"]
 
@@ -427,133 +544,88 @@ vm_predict <- function(y.formula, v.formula, m.formula, data, useU = TRUE,
                  paste(names(v.sds)[v.sds.index], collapse = ", ")))
   }
 
-  class.tests <- c(
-    V = is.numeric(V) & is.vector(V),
-    VX = (is.matrix(VX) & is.numeric(VX)),
-    Y = is.numeric(Y) & is.vector(Y),
-    YX = is.matrix(YX) & is.numeric(YX))
-
-  if (med) {
-    class.tests <- c(class.tests,
-      M = is.numeric(M) & is.vector(M),
-      MX = is.matrix(MX) & is.numeric(MX))
-  } else {
-    class.tests <- c(class.tests, M = TRUE, MX = TRUE)
-  }
+  class.tests <- c(V = is.numeric(vars$V) & is.vector(vars$V),
+    VX = (is.matrix(mm$V) & is.numeric(mm$V)),
+    switch(design,
+      `V -> Y` = c(
+        Y = is.numeric(vars$Y) & is.vector(vars$Y),
+        YX = is.matrix(mm$Y) & is.numeric(mm$Y),
+        M = TRUE, MX = TRUE),
+      `V -> M -> Y` = c(
+        Y = is.numeric(vars$Y) & is.vector(vars$Y),
+        YX = is.matrix(mm$Y) & is.numeric(mm$Y),
+        M = is.numeric(vars$M) & is.vector(vars$M),
+        MX = is.matrix(mm$M) & is.numeric(mm$M)),
+      `V` = c(Y = TRUE, YX = TRUE, M = TRUE, MX = TRUE)))
 
   if (!all(class.tests)) {
-    stop(c("V must be a numeric vector", "VX must be a numeric matrix",
-           "Y must be a numeric vector", "YX must be a numeric matrix",
-           "M must be a numeric vector", "MX must be a numeric matrix")[!class.tests])
+    stop(c("V must be a numeric vector ", "VX must be a numeric matrix ",
+           "Y must be a numeric vector ", "YX must be a numeric matrix ",
+           "M must be a numeric vector ", "MX must be a numeric matrix ")[!class.tests])
   }
 
-  n <- length(V)
-  k <- length(unique(VID))
+  n <- length(vars$V)
+  k <- length(unique(vars$VID))
 
-  if (!all(identical(nrow(VX), n), identical(length(VID), n))) {
-    stop("The length and rows of VX, V, and VID must all be equal")
+  dimension.tests <- c(V = all(identical(nrow(mm$V), n), identical(length(vars$VID), n)),
+    switch(design,
+      `V -> Y` = c(
+        Y = all(identical(nrow(mm$Y), k), identical(length(vars$Y), k)),
+        M = TRUE),
+      `V -> M -> Y` = c(
+        Y = all(identical(nrow(mm$Y), k), identical(length(vars$Y), k)),
+        M = all(identical(nrow(mm$M), k), identical(length(vars$M), k))),
+      `V` = c(Y = TRUE, M = TRUE)))
+
+  if (!all(dimension.tests)) {
+    stop(c("The length and rows of VX, V, and VID must all be equal ",
+           "The length and rows of Y, YX, and the unique IDs must all be equal ",
+           "The length and rows of M, MX, and the unique IDs must all be equal ")[!dimension.tests])
   }
 
-  if (!all(identical(nrow(YX), k), identical(length(Y), k))) {
-    stop("The length and rows of Y, YX, and the unique IDs must all be equal")
+  p <- c(list(VX = ncol(mm$V)),
+    switch(design,
+      `V -> Y` = list(YX = ncol(mm$Y), YX2 = 1L + useU),
+      `V -> M -> Y` = list(YX = ncol(mm$Y), YX2 = 1L + useU,
+                        MX = ncol(mm$M), MX2 = 1L + useU),
+      `V` = list()))
+
+  stan.data <- c(list(V = vars$V, VX = mm$V, VID = vars$VID, pVX = p$VX, n = n, k = k),
+    switch(design,
+      `V -> Y` = list(Y = vars$Y, YX = mm$Y, pYX = p$YX, pYX2 = p$YX2),
+      `V -> M -> Y` = list(Y = vars$Y, YX = mm$Y, pYX = p$YX, pYX2 = p$YX2,
+                           M = vars$M, MX = mm$M, pMX = p$MX, pMX2 = p$MX2),
+      `V` = list()))
+
+  if (is.null(inits)) {
+    inits <- tryCatch(stan_inits(stan.data, design, useU), error = function(e) return(e))
+    if (inherits(inits, "error")) return(list(Inits = inits, stan.data = stan.data))
   }
-
-  if (med) {
-    if (!all(identical(nrow(MX), k), identical(length(M), k))) {
-      stop("The length and rows of M, MX, and the unique IDs must all be equal")
-    }
-  }
-
-  pVX <- ncol(VX)
-  pYX <- ncol(YX)
-  pYX2 <- 1L + useU
-
-  if (med) {
-    pMX <- ncol(MX)
-    pMX2 <- 1L + useU
-
-    stan.data <- list(
-      V = V, VX = VX, VID = VID,
-      Y = Y, YX = YX,
-      M = M, MX = MX,
-      n = n, k = k,
-      pVX = pVX, pYX = pYX, pYX2 = pYX2, pMX = pMX, pMX2 = pMX2)
-
-  } else {
-    stan.data <- list(
-      V = V, VX = VX, VID = VID,
-      Y = Y, YX = YX,
-      n = n, k = k,
-      pVX = pVX, pYX = pYX, pYX2 = pYX2)
-  }
-
-
-  stan_inits <- function() {
-    rg <- res_gamma(V, VID)
-
-    out <- with(stan.data, list(
-      VB = as.array(coef(lm.fit(VX, V))),
-      U = as.array(by_id(V, VID, mean, FALSE, na.rm=TRUE)-mean(V, na.rm=TRUE)),
-      shape = rg$alpha,
-      rate = rg$beta,
-      Sigma_V = as.array(sd_id(V, VID, FALSE)),
-      sigma_Y = sd(Y, na.rm=TRUE)
-    ))
-
-    out$sigma_U <- sd(out$U, na.rm=TRUE)
-
-    if (useU) {
-      yb2 <- with(stan.data, coef(lm.fit(cbind(YX, Res = out$Sigma_V, U = out$U), Y)))
-    } else {
-      yb2 <- with(stan.data, coef(lm.fit(cbind(YX, Res = out$Sigma_V), Y)))
-    }
-
-    ync <- ncol(stan.data$YX)
-
-    out$YB <- as.array(yb2[1:ync])
-    out$Yalpha <- as.array(yb2[(ync + 1):length(yb2)])
-
-    if (med) {
-      out$sigma_M <- sd(stan.data$M, na.rm=TRUE)
-      if (useU) {
-        mb2 <- with(stan.data, coef(lm.fit(cbind(MX, Res = out$Sigma_V, U = out$U), M)))
-      } else {
-        mb2 <- with(stan.data, coef(lm.fit(cbind(MX, Res = out$Sigma_V), M)))
-      }
-
-      mnc <- ncol(stan.data$MX)
-
-      out$MB <- as.array(mb2[1:mnc])
-      out$Malpha <- as.array(mb2[(mnc + 1):length(mb2)])
-    }
-
-    return(out)
-  }
-
-  if (is.null(inits)) inits <- stan_inits
 
   if (!missing(modelfit)) {
     model <- modelfit
   } else {
-    if (med) {
-      model <- vm_stan("vm_predict_mediation", useU=useU)
-    } else {
-      model <- vm_stan("vm_predict", useU=useU)
-    }
+    model <- vm_stan(design, useU=useU)
   }
 
-  if (med) {
-    res <- parallel_stan(modelfit = model, standata = stan.data,
-      totaliter = totaliter, warmup = warmup, chains = chains,
-      pars = c("VB", "U", "sigma_U", "shape", "rate", "Sigma_V",
-               "YB", "Yalpha", "sigma_Y",
-               "MB", "Malpha", "sigma_M"), init = inits, ...)
+  if (is.null(opts$pars)) {
+    pars <- c("VB", "U", "sigma_U", "shape", "rate", "Sigma_V",
+      switch(design,
+        `V -> Y` = c("YB", "Yalpha", "sigma_Y"),
+        `V -> M -> Y` = c("YB", "Yalpha", "sigma_Y",
+                         "MB", "Malpha", "sigma_M"),
+        `V` = c()))
   } else {
-    res <- parallel_stan(modelfit = model, standata = stan.data,
-      totaliter = totaliter, warmup = warmup, chains = chains,
-      pars = c("VB", "U", "sigma_U", "shape", "rate", "Sigma_V",
-               "YB", "Yalpha", "sigma_Y"), init = inits, ...)
+    pars <- opts$pars
   }
+
+  # inits is just one list because even when multiple chains
+  # parallel_stan runs one chain per worker/core
+  res <- parallel_stan(modelfit = model, standata = stan.data,
+      totaliter = totaliter, warmup = warmup, chains = chains,
+      pars = pars, init = list(inits), ...)
+      ## ,
+      ## error = function(e) list(Error = e, init = inits(), standata = stan.data))
 
   out <- list(
     results = res$results,
@@ -561,14 +633,12 @@ vm_predict <- function(y.formula, v.formula, m.formula, data, useU = TRUE,
     variable.names = var.names,
     data = c(stan.data, list(IDkey = key)),
     seeds = res$seeds,
-    .call = storedCall
+    .call = storedCall,
+    inits = list(inits),
+    design = design
   )
 
-  if (med) {
-    class(out) <- c("vmp_med", "list")
-  } else {
-    class(out) <- c("vmp", "list")
-  }
+  class(out) <- c("vm", "list")
 
   return(out)
 }

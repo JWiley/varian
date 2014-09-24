@@ -117,10 +117,7 @@ vmp_plot <- function(alpha, useU = TRUE, plot = TRUE, digits = 3, ...) {
 #' @examples
 #' # Make Me!
 vm_diagnostics <- function(object, plot=TRUE, ...) {
-  if (inherits(object, "vmp")) {
-    object <- object$results
-  }
-  if (inherits(object, "vmp_med")) {
+  if (inherits(object, "vm")) {
     object <- object$results
   }
 
