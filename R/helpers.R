@@ -286,7 +286,7 @@ simulate_gvm <- function(n, k, mu, mu.sigma, sigma.shape, sigma.rate, seed = 534
 #' @param pars Parameter names from Stan to store
 #' @param sample_file The sample file for Stan
 #' @param diagnostic_file The diagnostic file for Stan
-#' @param \dots Additional arguments passed on to \code{stan}
+#' @param init A character string (\dQuote{random}) or a named list of starting values.
 #' @return a named list with three elements, the \code{results},
 #'   compiled Stan \code{model}, and the random \code{seeds}
 #' @author Joshua F. Wiley <josh@@elkhartgroup.com>
@@ -296,7 +296,7 @@ simulate_gvm <- function(n, k, mu, mu.sigma, sigma.shape, sigma.rate, seed = 534
 #' # Make me!
 parallel_stan <- function(model_code, standata, totaliter, warmup, thin = 1,
                   chains, cl, cores, seeds, modelfit, verbose = FALSE,
-                  pars = NA, sample_file=NA, diagnostic_file = NA, ...) {
+                  pars = NA, sample_file=NA, diagnostic_file = NA, init = "random", ...) {
   if (missing(cl)) {
     if (missing(cores)) {
       cores <- detectCores()
@@ -313,8 +313,10 @@ parallel_stan <- function(model_code, standata, totaliter, warmup, thin = 1,
     stanmodel <- stan_model(model_code = model_code, save_dso = TRUE)
   }
 
-  if (verbose) cat("loading VM on workers\n")
-  clusterEvalQ(cl, require(VM))
+  if (verbose) cat("loading varian on workers\n")
+  clusterEvalQ(cl, {
+    require(varian)
+  })
 
   if (missing(seeds)) {
     seeds <- sample(.Random.seed, chains)
@@ -324,25 +326,25 @@ parallel_stan <- function(model_code, standata, totaliter, warmup, thin = 1,
 
   fooenv <- environment()
 
-  clusterExport(cl,
-    varlist = c("stanmodel", "standata", "eachiter", "seeds", "warmup", "thin",
-      "sample_file", "diagnostic_file", "pars"),
+  clusterExport(cl, varlist = c(
+      "stanmodel", "standata", "pars",
+      "eachiter", "warmup", "thin", "seeds", "init",
+      "sample_file", "diagnostic_file"),
     envir = fooenv)
 
   if (verbose) cat("Sampling from Stan\n")
   stanres <- parLapplyLB(cl, 1:chains, function(i) {
-    sampling(object=stanmodel, data = standata, pars,
-      chains = 1, iter = eachiter + warmup,
-      warmup = warmup, thin = thin,
-      seed = seeds[i], chain_id = i,
-      check_data = TRUE, sample_file = sample_file,
-      diagnostic_file = diagnostic_file, ...)
+    stanres <- sampling(object = stanmodel, data = standata, pars = pars,
+      chains = 1, iter = eachiter + warmup, warmup = warmup,
+      thin = thin, seed = seeds[1], init = init, check_data = TRUE,
+      sample_file = sample_file, diagnostic_file = diagnostic_file,
+      chain_id = i)
   })
 
   if (chains > 1) {
     if (verbose) cat("Combining chains\n")
 
-    stanres <- sflist2stanfit(stanres)
+    stanres <- tryCatch(sflist2stanfit(stanres), error = function(e) return(results = e))
   } else {
     stanres <- stanres[[1]]
   }

@@ -1,20 +1,24 @@
 Package: varian
 Type: Package
-Title: Variability Analysis in R
 Version: 0.2.0
-Date: 2014-09-24
-Author: Joshua F. Wiley
-Maintainer: Joshua F. Wiley <josh@elkhartgroup.com>
+Title: Variability Analysis in R
 Description: The varian package estimates the variability in a repeated
     measure outcome and uses that as an outcome or a predictor in a second stage
     model.
-License: LGPL-3
+Date: 2014-09-24
+Authors@R: c(person(
+    "Joshua", "Wiley", "F.", "josh@elkhargroup.com", c("aut", "cre")),
+    person("Elkhart Group Limited", role = "cph"))
+URL: https://github.com/JWiley/varian
+BugReports: https://github.com/JWiley/varian/issues
 Depends:
-    rstan,
-    parallel,
-    ggplot2,
-    gridExtra
+    R (>= 3.1.1),
+    rstan (>= 2.4.0),
+    ggplot2
 Imports:
     MASS,
-    Formula
+    Formula,
+    grid,
+    gridExtra
 LazyLoad: yes
+License: MIT + file LICENSE

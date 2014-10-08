@@ -9,7 +9,10 @@ stan_inits(stan.data, design = c("V -> Y", "V -> M -> Y", "V", "X -> V",
 \arguments{
 \item{stan.data}{A list containing the data to be passed to Stan}
 
-\item{design}{The type of model}
+\item{design}{A character string indicating the type of model to be run.  One of
+\dQuote{V -> Y} for variability predicting an outcome,
+\dQuote{V -> M -> Y} for mediation of variability on an outcome,
+\dQuote{V} to take posterior samples of individual variability estimates alone.}
 
 \item{useU}{whether to include the random intercepts}
 

@@ -73,24 +73,7 @@ another Level 2 outcome.  The interface uses an intuitive formula interface, but
 the underlying model is implemented in Stan, with minimally informative priors for all
 parameters.
 
-The varian package estimates the variability in a repeated
-  measure outcome and uses that as an outcome or a predictor in a second stage
-  model.
-}
-\details{
-The varian package has one primary function:
-\enumerate{
-  \item \code{\link{vm_predict}}
-}
-
-\tabular{ll}{
-Package: \tab varian\cr
-Type: \tab Package\cr
-Version: \tab 0.1.1\cr
-Date: \tab 2014-09-09\cr
-License: \tab LGPL-3\cr
-LazyLoad: \tab yes\cr
-}
+The Variability Analysis in R Package
 }
 \examples{
 \dontrun{
@@ -123,7 +106,7 @@ LazyLoad: \tab yes\cr
       ID = Data$ID2)
   })
   # warning: may take several minutes
-  m2 <- vm_predict(y2 ~ x1 + x2, y ~ 1 | ID, data = sim.data2, design = "V -> Y",
+  m2 <- varian(y2 ~ x1 + x2, y ~ 1 | ID, data = sim.data2, design = "V -> Y",
     totaliter = 10000, warmup = 1500, thin = 10, chains = 4, verbose=TRUE)
   # check diagnostics
   vm_diagnostics(m2)
@@ -131,17 +114,6 @@ LazyLoad: \tab yes\cr
 }
 \author{
 Joshua F. Wiley <josh@elkhartgroup.com>
-
-Joshua F. Wiley \email{josh@elkhartgroup.com}
-
-Maintainer: Joshua F. Wiley \email{josh@elkhartgroup.com}
-}
-\references{
-Elkhart Group Ltd. \url{http://elkhartgroup.com}
-}
-\seealso{
-See \code{\link{vm_predict}} for an example running a model.
 }
 \keyword{models}
-\keyword{package}
 

@@ -6,7 +6,7 @@
 vm_diagnostics(object, plot = TRUE, ...)
 }
 \arguments{
-\item{object}{Results from running \code{vm_predict}.}
+\item{object}{Results from running \code{varian}.}
 
 \item{plot}{Logical whether to plot the results or just return the grob
 for the plots.  Defaults to \code{TRUE}.}

@@ -66,8 +66,10 @@
 #'
 #' Internal function to create and compile a Stan model.
 #'
-#' @param type A character string indicating the type of model,
-#'   currently only \dQuote{vm_predict} and \dQuote{vm_predict_mediation}.
+#' @param design A character string indicating the type of model to be run.  One of
+#'   \dQuote{V -> Y} for variability predicting an outcome,
+#'   \dQuote{V -> M -> Y} for mediation of variability on an outcome,
+#'   \dQuote{V} to take posterior samples of individual variability estimates alone.
 #' @param useU A logical value whether the latent intercept estimated in Stage 1 should
 #'   also be used as a predictor.  Defaults to \code{TRUE}.
 #' @param \dots Additional arguments passed to \code{stan_model}.
@@ -77,10 +79,11 @@
 #' @examples
 #' # Make Me!
 #' \dontrun{
-#'   test1 <- vm_stan("vm_predict", useU=TRUE)
-#'   test2 <- vm_stan("vm_predict", useU=FALSE)
-#'   test3 <- vm_stan("vm_predict_mediation", useU=TRUE)
-#'   test4 <- vm_stan("vm_predict_mediation", useU=FALSE)
+#'   test1 <- vm_stan("V -> Y", useU=TRUE)
+#'   test2 <- vm_stan("V -> Y", useU=FALSE)
+#'   test3 <- vm_stan("V -> M -> Y", useU=TRUE)
+#'   test4 <- vm_stan("V -> M -> Y", useU=FALSE)
+#'   test5 <- vm_stan("V")
 #' }
 vm_stan <- function(design = c("V -> Y", "V -> M -> Y", "V",
     "X -> V", "X -> V -> Y", "X -> M -> V"), useU=TRUE, ...) {
@@ -264,10 +267,12 @@ vm_stan <- function(design = c("V -> Y", "V -> M -> Y", "V",
 #' and linear regressions.
 #'
 #' @param stan.data A list containing the data to be passed to Stan
-#' @param design The type of model
+#' @param design A character string indicating the type of model to be run.  One of
+#'   \dQuote{V -> Y} for variability predicting an outcome,
+#'   \dQuote{V -> M -> Y} for mediation of variability on an outcome,
+#'   \dQuote{V} to take posterior samples of individual variability estimates alone.
 #' @param useU whether to include the random intercepts
 #' @param \dots Additional arguments (not currently used)
-#'
 #' @return A named list containing the initial values for Stan.
 #' @author Joshua F. Wiley <josh@@elkhartgroup.com>
 #' @keywords models
@@ -413,7 +418,7 @@ stan_inits <- function(stan.data, design = c("V -> Y", "V -> M -> Y", "V",
 #'       ID = Data$ID2)
 #'   })
 #'   # warning: may take several minutes
-#'   m2 <- vm_predict(y2 ~ x1 + x2, y ~ 1 | ID, data = sim.data2, design = "V -> Y",
+#'   m2 <- varian(y2 ~ x1 + x2, y ~ 1 | ID, data = sim.data2, design = "V -> Y",
 #'     totaliter = 10000, warmup = 1500, thin = 10, chains = 4, verbose=TRUE)
 #'   # check diagnostics
 #'   vm_diagnostics(m2)
@@ -598,7 +603,7 @@ varian <- function(y.formula, v.formula, m.formula, data,
       `V` = list()))
 
   if (is.null(inits)) {
-    inits <- tryCatch(stan_inits(stan.data, design, useU), error = function(e) return(e))
+    inits <- tryCatch(list(stan_inits(stan.data, design, useU)), error = function(e) return(e))
     if (inherits(inits, "error")) return(list(Inits = inits, stan.data = stan.data))
   }
 
@@ -623,13 +628,11 @@ varian <- function(y.formula, v.formula, m.formula, data,
   # parallel_stan runs one chain per worker/core
   res <- parallel_stan(modelfit = model, standata = stan.data,
       totaliter = totaliter, warmup = warmup, chains = chains,
-      pars = pars, init = list(inits), ...)
-      ## ,
-      ## error = function(e) list(Error = e, init = inits(), standata = stan.data))
+      pars = pars, init = inits, ...)
 
   out <- list(
     results = res$results,
-    model = res$model,
+    model = model,
     variable.names = var.names,
     data = c(stan.data, list(IDkey = key)),
     seeds = res$seeds,

@@ -6,7 +6,7 @@
 vmp_plot(alpha, useU = TRUE, plot = TRUE, digits = 3, ...)
 }
 \arguments{
-\item{alpha}{Results from running \code{vm_predict} and \code{extract}ing the
+\item{alpha}{Results from running \code{varian} and \code{extract}ing the
 results.}
 
 \item{useU}{Logical indicating whether to plot the latent intercepts

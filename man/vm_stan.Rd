@@ -7,8 +7,10 @@ vm_stan(design = c("V -> Y", "V -> M -> Y", "V", "X -> V", "X -> V -> Y",
   "X -> M -> V"), useU = TRUE, ...)
 }
 \arguments{
-\item{type}{A character string indicating the type of model,
-currently only \dQuote{vm_predict} and \dQuote{vm_predict_mediation}.}
+\item{design}{A character string indicating the type of model to be run.  One of
+\dQuote{V -> Y} for variability predicting an outcome,
+\dQuote{V -> M -> Y} for mediation of variability on an outcome,
+\dQuote{V} to take posterior samples of individual variability estimates alone.}
 
 \item{useU}{A logical value whether the latent intercept estimated in Stage 1 should
 also be used as a predictor.  Defaults to \code{TRUE}.}
@@ -24,10 +26,11 @@ Internal function to create and compile a Stan model.
 \examples{
 # Make Me!
 \dontrun{
-  test1 <- vm_stan("vm_predict", useU=TRUE)
-  test2 <- vm_stan("vm_predict", useU=FALSE)
-  test3 <- vm_stan("vm_predict_mediation", useU=TRUE)
-  test4 <- vm_stan("vm_predict_mediation", useU=FALSE)
+  test1 <- vm_stan("V -> Y", useU=TRUE)
+  test2 <- vm_stan("V -> Y", useU=FALSE)
+  test3 <- vm_stan("V -> M -> Y", useU=TRUE)
+  test4 <- vm_stan("V -> M -> Y", useU=FALSE)
+  test5 <- vm_stan("V")
 }
 }
 \author{

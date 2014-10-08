@@ -5,7 +5,7 @@
 \usage{
 parallel_stan(model_code, standata, totaliter, warmup, thin = 1, chains, cl,
   cores, seeds, modelfit, verbose = FALSE, pars = NA, sample_file = NA,
-  diagnostic_file = NA, ...)
+  diagnostic_file = NA, init = "random", ...)
 }
 \arguments{
 \item{model_code}{A character string of Stan code}
@@ -51,7 +51,7 @@ compiling \code{model_code}.}
 
 \item{diagnostic_file}{The diagnostic file for Stan}
 
-\item{\dots}{Additional arguments passed on to \code{stan}}
+\item{init}{A character string (\dQuote{random}) or a named list of starting values.}
 }
 \value{
 a named list with three elements, the \code{results},
