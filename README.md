@@ -1,7 +1,8 @@
+<!--
 <img src="https://elkhartgroup.com/images/varian_logo.png"
 	 alt="varian logo"
 	 style = "width: 420px; height: 160px;"/>
-	 
+-->
 
 `varian` is a free, open source `R` package for *vari*ability
 *an*alysis using Bayesian inference.
@@ -41,7 +42,7 @@ code.
 
 ### RStan
 
-Install the latest version of the 
+Install the latest version of the
 [`rstan`](https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started)
 package by following the directions from the creators of `Stan`, and
 ensure that `Stan` is working correctly.
@@ -69,7 +70,7 @@ You can install:
 
 ## Learn about the theory
 
-See our open access paper on the arXiv <http://arxiv.org/>.
+See our open access pre-print on the arXiv <http://arxiv.org/abs/1411.2961>.
 
 
 # More
