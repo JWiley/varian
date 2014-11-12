@@ -1,6 +1,6 @@
 <img src="https://elkhartgroup.com/images/varian_logo.png"
 	 alt="varian logo"
-	 style = "width: 569px; height: 160px;"/>
+	 style = "width: 650px; height: 160px;"/>
 
 `varian` is a free, open source `R` package for *vari*ability
 *an*alysis using Bayesian inference.
