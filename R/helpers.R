@@ -287,6 +287,7 @@ simulate_gvm <- function(n, k, mu, mu.sigma, sigma.shape, sigma.rate, seed = 534
 #' @param sample_file The sample file for Stan
 #' @param diagnostic_file The diagnostic file for Stan
 #' @param init A character string (\dQuote{random}) or a named list of starting values.
+#' @param \dots Additional arguments, not currently used.
 #' @return a named list with three elements, the \code{results},
 #'   compiled Stan \code{model}, and the random \code{seeds}
 #' @author Joshua F. Wiley <josh@@elkhartgroup.com>

@@ -52,6 +52,8 @@ compiling \code{model_code}.}
 \item{diagnostic_file}{The diagnostic file for Stan}
 
 \item{init}{A character string (\dQuote{random}) or a named list of starting values.}
+
+\item{\dots}{Additional arguments, not currently used.}
 }
 \value{
 a named list with three elements, the \code{results},
