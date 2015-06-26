@@ -184,6 +184,7 @@ res_gamma <- function(x, ID) {
 #' side of zero.  It calculates a two-tailed p-value.
 #'
 #' @param x a data vector to operate on
+#' @param na.rm Logical whether to remove NA values. Defaults to \code{TRUE}
 #' @return a named vector with the number of values falling at
 #'   or below zero, above zero, and the empirical p-value.
 #' @author Joshua F. Wiley <josh@@elkhartgroup.com>
@@ -192,16 +193,79 @@ res_gamma <- function(x, ID) {
 #' @examples
 #'
 #' empirical_pvalue(rnorm(100))
-empirical_pvalue <- function(x) {
+empirical_pvalue <- function(x, na.rm = TRUE) {
   x <- as.integer(x <= 0)
   tmp <- table(factor(x, levels = 1:0, labels = c("<= 0", "> 0")))
-  m <- mean(x, na.rm=TRUE)
+  m <- mean(x, na.rm = na.rm)
   pval2 <- 2 * min(m, 1 - m)
   out <- c(as.vector(tmp), pval2)
   names(out) <- c(names(tmp), "p-value")
 
   out
 }
+
+
+#' nice formatting for p-values
+#'
+#' @param p a numeric pvalue
+#' @param d the digits less than which should be displayed as less than
+#' @param sd scientific digits for round
+#' @author Joshua F. Wiley <josh@@elkhartgroup.com>
+#' @keywords utilities
+#' @examples
+#' pval_smartformat(c(1, .15346, .085463, .05673, .04837, .015353462, .0089, .00164, .0006589, .0000000053326), 3, 5)
+pval_smartformat <- function(p, d = 3, sd = 5) {
+  p.out <- ifelse(p < 1/(10^d),
+         paste0("< .", paste(rep(0, d - 1), collapse = ""), "1"),
+                  format(round(p, digits = d), digits = d, nsmall = d, scientific = sd))
+  gsub("0\\.", ".", p.out)
+}
+
+
+#' Calculates summaries for a parameter
+#'
+#' This function takes a vector of statistics and calculates
+#' several summaries: mean, median, 95% CI, and
+#' the empirical p-value, that is, how many fall on the other
+#' side of zero.
+#'
+#' @param x a data vector to operate on
+#' @param digits Number of digits to round to for printing
+#' @param ldots Additional arguments passed to \code{pval_smartformat}
+#'   to control p-value printing.
+#' @param na.rm Logical whether to remove NA values. Defaults to \code{TRUE}
+#' @return .
+#' @author Joshua F. Wiley <josh@@elkhartgroup.com>
+#' @export
+#' @keywords utilities
+#' @examples
+#'
+#' param_summary(rnorm(100))
+#' param_summary(rnorm(100), pretty = TRUE)
+param_summary <- function(x, digits = 2, pretty = FALSE, ..., na.rm = TRUE) {
+  res <- round(data.frame(Mean = mean(x, na.rm = na.rm),
+    Median = median(x, na.rm = na.rm),
+    SE = sd(x, na.rm = na.rm),
+    LL2.5 = as.vector(quantile(x, probs = .025, na.rm = na.rm)),
+    UL97.5 = as.vector(quantile(x, probs = .975, na.rm = na.rm))),
+    digits = digits)
+
+  p <- pval_smartformat(empirical_pvalue(x)[["p-value"]], ...)
+
+  if (pretty) {
+    out <- sprintf("%s [%s, %s], %s",
+                   as.character(res$Mean),
+                   as.character(res$LL2.5),
+                   as.character(res$UL97.5),
+                   ifelse(grepl("<", p), paste0("p ", p), paste0("p = ", p)))
+  } else {
+    res[, 'p-value'] <- p
+    out <- res
+  }
+
+  return(out)
+}
+
 
 #' Simulate a Gamma Variability Model
 #'
