@@ -38,7 +38,7 @@ code.
   <http://cran.r-project.org/bin/windows/Rtools/>
 * For Mac, make sure you have the latest version of Xcode installed.
   The installation instructions for `rstan` provide more details.
-* For Linux, make sure you have a recent version of ge++ or clang++.
+* For Linux, make sure you have a recent version of g++ or clang++.
 
 ### RStan
 
