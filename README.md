@@ -47,9 +47,10 @@ Install the latest version of the
 package, which you can do from CRAN now.  That page also lists more
 detailed directions for getting the necessary tools installed.
 
+
     ```R
-	install.packages("rstan", dependencies = TRUE)
-	```
+    install.packages("rstan", dependencies = TRUE)
+    ```
 
 ## Install varian
 
@@ -58,15 +59,16 @@ You can install:
 * the latest stable release from CRAN
 
     ```R
-	install.packages("varian", dependencies = TRUE)
-	```
+    install.packages("varian", dependencies = TRUE)
+    ```
 
 * the latest development version from github
 
+
     ```R
-	install.packages("devtools")
-	devtools::install_github("ElkhartGroup/varian")
-	```
+    install.packages("devtools")
+    devtools::install_github("ElkhartGroup/varian")
+    ```
 
 ## Learn about the theory
 
