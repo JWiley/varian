@@ -44,13 +44,9 @@ code.
 
 Install the latest version of the
 [`rstan`](https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started)
-package, which you can do from CRAN now.  That page also lists more
-detailed directions for getting the necessary tools installed.
-
-
-    ```R
-    install.packages("rstan", dependencies = TRUE)
-    ```
+package (should happen automatically from CRAN now). That page also
+lists more detailed directions for getting the necessary tools
+installed.
 
 ## Install varian
 
