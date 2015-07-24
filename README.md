@@ -55,7 +55,7 @@ detailed directions for getting the necessary tools installed.
 
 You can install:
 
-* the latest stable release (0.2.0) from CRAN
+* the latest stable release from CRAN
 
     ```R
 	install.packages("varian", dependencies = TRUE)
