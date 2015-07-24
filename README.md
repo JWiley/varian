@@ -1,4 +1,4 @@
-<img src="https://elkhartgroup.com/images/varian_logo.png"
+<img src="http://elkhartgroup.com/images/varian_logo.png"
 	 alt="varian logo"
 	 style = "width: 650px; height: 160px;"/>
 
@@ -12,6 +12,7 @@ intercepts/slopes, the residual variance is a random variable by
 ID.  The latent residual variance estimates are then used as
 predictors in a regression of another outcome.
 
+[![Build Status](https://travis-ci.org/ElkhartGroup/varian.svg?branch=master)](https://travis-ci.org/ElkhartGroup/varian)
 [![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/varian)](http://cran.r-project.org/package=varian)
 
 # Getting Started
