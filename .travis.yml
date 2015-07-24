@@ -13,7 +13,6 @@ before_install:
   - ./travis-tool.sh bootstrap
 
 install:
-  - cd pscore
   - ../travis-tool.sh install_deps
 
 script: ../travis-tool.sh run_tests
