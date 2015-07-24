@@ -12,11 +12,12 @@ intercepts/slopes, the residual variance is a random variable by
 ID.  The latent residual variance estimates are then used as
 predictors in a regression of another outcome.
 
+[![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/varian)](http://cran.r-project.org/package=varian)
+
 # Getting Started
 
 At its core, `varian` uses [`Stan`](http://mc-stan.org) to estimate the
-models.  Because the `rstan` package is not yet on CRAN, `varian` must
-be installed from github.
+models.
 
 ## Prerequisites
 
@@ -42,28 +43,28 @@ code.
 
 Install the latest version of the
 [`rstan`](https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started)
-package by following the directions from the creators of `Stan`, and
-ensure that `Stan` is working correctly.
+package, which you can do from CRAN now.  That page also lists more
+detailed directions for getting the necessary tools installed.
 
-That page also lists more detailed directions for getting the
-necessary tools installed.
+    ```R
+	install.packages("rstan", dependencies = TRUE)
+	```
 
 ## Install varian
 
 You can install:
 
-* the latest stable release (0.2.0) from github
+* the latest stable release (0.2.0) from CRAN
 
     ```R
-	install.packages("devtools")
-	devtools::install_github("varian", "ElkhartGroup", ref = "v0.2.0")
+	install.packages("varian", dependencies = TRUE)
 	```
 
 * the latest development version from github
 
     ```R
 	install.packages("devtools")
-	devtools::install_github("varian", "ElkhartGroup")
+	devtools::install_github("ElkhartGroup/varian")
 	```
 
 ## Learn about the theory

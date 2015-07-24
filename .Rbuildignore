@@ -1,0 +1,9 @@
+^\.travis\.yml$
+^NEWS\.md$
+^cran-comments\.md$
+^appveyor\.yml$
+^revdep$
+\.gitignore
+\.Rhistory
+^.\..~$
+desktop.ini

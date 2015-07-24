@@ -213,7 +213,8 @@ empirical_pvalue <- function(x, na.rm = TRUE) {
 #' @author Joshua F. Wiley <josh@@elkhartgroup.com>
 #' @keywords utilities
 #' @examples
-#' pval_smartformat(c(1, .15346, .085463, .05673, .04837, .015353462, .0089, .00164, .0006589, .0000000053326), 3, 5)
+#' varian:::pval_smartformat(c(1, .15346, .085463, .05673, .04837, .015353462,
+#'   .0089, .00164, .0006589, .0000000053326), 3, 5)
 pval_smartformat <- function(p, d = 3, sd = 5) {
   p.out <- ifelse(p < 1/(10^d),
          paste0("< .", paste(rep(0, d - 1), collapse = ""), "1"),
@@ -231,7 +232,9 @@ pval_smartformat <- function(p, d = 3, sd = 5) {
 #'
 #' @param x a data vector to operate on
 #' @param digits Number of digits to round to for printing
-#' @param ldots Additional arguments passed to \code{pval_smartformat}
+#' @param pretty Logical value whether prettified values should be returned.
+#'   Defaults to \code{FALSE}.
+#' @param \dots Additional arguments passed to \code{pval_smartformat}
 #'   to control p-value printing.
 #' @param na.rm Logical whether to remove NA values. Defaults to \code{TRUE}
 #' @return .

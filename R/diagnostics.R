@@ -86,7 +86,7 @@ vmp_plot <- function(alpha, useU = TRUE, plot = TRUE, digits = 3, ...) {
 
   p.out <- do.call(arrangeGrob, c(graphs, ncol = 2))
 
-  if (plot) print(p.out)
+  if (plot) grid.draw(p.out)
 
   invisible(list(Combined = p.out, Individual = graphs))
 
@@ -181,7 +181,7 @@ vm_diagnostics <- function(object, plot=TRUE, ...) {
     p.u, ncol = 1)
 
   if (plot) {
-    print(p.diag)
+    grid.draw(p.diag)
   }
 
   invisible(p.diag)

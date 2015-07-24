@@ -1,1 +1,8 @@
-*.Rhistory
+.Rhistory
+.RData
+desktop.ini
+
+# ignore emacs files
+*~
+[#]*[#]
+.\#*
