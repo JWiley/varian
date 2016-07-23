@@ -1,3 +1,11 @@
+# varian 0.3.0
+
+## New Features
+* `varian()` can now include quadratic effects of latent means and
+  intraindividual variabilities.
+
+* `summary.vm()` method now added for a convenient summary.
+
 # varian 0.2.0
 
 ## Major Changes

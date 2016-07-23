@@ -1,20 +1,20 @@
 Package: varian
 Type: Package
-Version: 0.2.1
+Version: 0.3.0
 Title: Variability Analysis in R
 Description: Uses a Bayesian model to
     estimate the variability in a repeated
     measure outcome and use that as an outcome or a predictor
     in a second stage model.
-Date: 2015-7-24
+Date: 2016-7-23
 Author: Joshua F. Wiley [aut, cre],
-  Elkhart Group Limited [cph]
+    Elkhart Group Limited [cph]
 Maintainer: Joshua F. Wiley <josh@elkhartgroup.com>
 URL: https://github.com/ElkhartGroup/varian
 BugReports: https://github.com/ElkhartGroup/varian/issues
 Depends:
-    R (>= 3.1.1),
-    rstan (>= 2.7.0),
+    R (>= 3.3.0),
+    rstan (>= 2.10.0),
     ggplot2
 Imports:
     stats,
@@ -23,6 +23,8 @@ Imports:
     grid,
     gridExtra
 Suggests:
+    shinystan,
     testthat
 LazyLoad: yes
 License: MIT + file LICENSE
+RoxygenNote: 5.0.1

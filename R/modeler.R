@@ -43,8 +43,8 @@
 ##     sigma_u ~ cauchy(0,2);
 ##     sigma_w ~ cauchy(0,2);
 ##     Omega ~ lkj_corr(2.0);
-##     L <- cholesky_decompose(Omega);
-##     DL <- D * L;
+##     L = cholesky_decompose(Omega);
+##     DL - D * L;
 ##     for (i in 1:I)                             // loop for subj random effects
 ##         u[i] ~ multi_normal_cholesky(mu_prior, DL);
 ##     for (k in 1:K)                             // loop for item random effects
@@ -57,7 +57,7 @@
 ## }
 ## generated quantities {
 ##     cov_matrix[2] Sigma;
-##     Sigma <- D * Omega * D;
+##     Sigma = D * Omega * D;
 ## }
 
 
@@ -71,27 +71,77 @@
 #'   \dQuote{V -> M -> Y} for mediation of variability on an outcome,
 #'   \dQuote{V} to take posterior samples of individual variability estimates alone.
 #' @param useU A logical value whether the latent intercept estimated in Stage 1 should
-#'   also be used as a predictor.  Defaults to \code{TRUE}.
+#'   also be used as a predictor.  Defaults to \code{TRUE}.  Note if there is a
+#'   mediator as well as main outcome, the latent intercepts will be used as a predictor
+#'   for both.
+#' @param UQ A logical value whether the latent intercept estimated in Stage 1 should
+#'   also be used as a predictor with a qudratice effect.  Defaults to \code{FALSE}.
+#'   Note if there is a mediator as well as main outcome, the latent intercepts
+#'   will be used as a predictor for both.
+#' @param IIVQ A logical value whether the latent variabilities estimated in Stage 1 should
+#'   also be used as a predictor with a qudratice effect.  Defaults to \code{FALSE}.
+#'   Note if there is a mediator as well as main outcome, the latent intercepts
+#'   will be used as a predictor for both.
+#' @param centerU A numeric vector of length one (scalar) that is used to center the
+#'   latent intercept estimates before using as a predictor of the outcome / mediator.
+#'   Uses the formula: (U - centerU). Particularly useful when including quadratic terms.
+#' @param centerIIV A numeric vector of length one (scalar) that is used to center the
+#'   latent variability estimates before using as a predictor of the outcome / mediator.
+#'   Uses the formula: (IIV - centerIIV). Particularly useful when including quadratic terms.
 #' @param \dots Additional arguments passed to \code{stan_model}.
+#' @param template_only A logical, not commonly used. If \code{TRUE} returns
+#'   the Stan template code only, without actually compiling the Stan model.
+#'   Useful for modifying the default models.
 #' @return A compiled Stan model.
 #' @author Joshua F. Wiley <josh@@elkhartgroup.com>
 #' @keywords models
 #' @examples
-#' # Make Me!
-#' \dontrun{
-#'   test1 <- vm_stan("V -> Y", useU=TRUE)
-#'   test2 <- vm_stan("V -> Y", useU=FALSE)
-#'   test3 <- vm_stan("V -> M -> Y", useU=TRUE)
-#'   test4 <- vm_stan("V -> M -> Y", useU=FALSE)
-#'   test5 <- vm_stan("V")
-#' }
-vm_stan <- function(design = c("V -> Y", "V -> M -> Y", "V",
-    "X -> V", "X -> V -> Y", "X -> M -> V"), useU=TRUE, ...) {
+#' varian:::vm_stan("V -> Y", useU=TRUE, template_only = TRUE)
+#' varian:::vm_stan("V -> Y", useU=TRUE, UQ = TRUE, IIVQ = TRUE, template_only = TRUE)
+#' varian:::vm_stan("V -> M -> Y", useU=TRUE, UQ = TRUE, IIVQ = TRUE, template_only = TRUE)
+vm_stan <- function(design = c("V -> Y", "V -> M -> Y", "V", "X -> V", "X -> V -> Y", "X -> M -> V"),
+                    useU = TRUE, UQ = FALSE, IIVQ = FALSE, centerU = 0, centerIIV = 0, ..., template_only = FALSE) {
 
   design <- match.arg(design)
   if (!design %in% c("V -> Y", "V -> M -> Y", "V")) {
     stop("Currently only V -> Y, V -> M -> Y, and V are implemented")
   }
+
+  if (UQ & !useU) {
+    warning("UQ = TRUE but useU = FALSE, setting useU = TRUE")
+    useU <- TRUE
+  }
+
+  ## recode centering to character for sprintf
+  if (centerU != 0) {
+    centerU <- sprintf(" - %s", as.character(centerU))
+  } else {
+    centerU <- ""
+  }
+
+  if (centerIIV != 0) {
+    centerIIV <- sprintf(" - %s", as.character(centerIIV))
+  } else {
+    centerIIV <- ""
+  }
+
+  type <- paste0(as.integer(useU), as.integer(UQ), as.integer(IIVQ))
+
+  alphaparams <- switch(type,
+         "000" = sprintf("%%DV%%alpha[1] * (Sigma_V[i]%s)", centerIIV),
+         "100" = sprintf("%%DV%%alpha[1] * (Sigma_V[i]%s) + %%DV%%alpha[2] * (U[i]%s)",
+                         centerIIV, centerU),
+         ## "010" = , ## disallowed to have UQ = TRUE and useU = FALSE
+         "110" = sprintf("%%DV%%alpha[1] * (Sigma_V[i]%s) + %%DV%%alpha[2] * (U[i]%s) + %%DV%%alpha[3] * pow(U[i]%s, 2)",
+                         centerIIV, centerU, centerU),
+         "001" = sprintf("%%DV%%alpha[1] * (Sigma_V[i]%s) + %%DV%%alpha[2] * pow(Sigma_V[i]%s, 2)",
+                         centerIIV, centerIIV),
+         "101" = sprintf("%%DV%%alpha[1] * (Sigma_V[i]%s) + %%DV%%alpha[2] * (U[i]%s) + %%DV%%alpha[3] * pow(Sigma_V[i]%s, 2)",
+                         centerIIV, centerU, centerIIV),
+         "011" =, ## disallowed to have UQ = TRUE and useU = FALSE
+         "111" = sprintf("%%DV%%alpha[1] * (Sigma_V[i]%s) + %%DV%%alpha[2] * (U[i]%s) + %%DV%%alpha[3] * pow(Sigma_V[i]%s, 2) + %%DV%%alpha[4] * pow(U[i]%s, 2)",
+                         centerIIV, centerU, centerIIV, centerU)
+         )
 
   ## show the priors
   ## x <- seq(.001, 50, by = .01)
@@ -125,8 +175,8 @@ vm_stan <- function(design = c("V -> Y", "V -> M -> Y", "V",
     tparameters.statements = "
       // Params related to V
       for (i in 1:n) {
-        V_hat[i] <- (VX[i] * VB) + U[VID[i]];
-        Sigma_V_hat[i] <- Sigma_V[VID[i]];
+        V_hat[i] = (VX[i] * VB) + U[VID[i]];
+        Sigma_V_hat[i] = Sigma_V[VID[i]];
       }
     ",
     model.declarations = "
@@ -135,6 +185,7 @@ vm_stan <- function(design = c("V -> Y", "V -> M -> Y", "V",
       U ~ normal(0, sigma_U);
       // Priors for Stage 1 scale of random location
       sigma_U ~ cauchy(0, 10);
+
       // Priors for Stage 1 Scale
       shape ~ cauchy(0, 10);
       rate ~ cauchy(0, 10);
@@ -164,12 +215,12 @@ vm_stan <- function(design = c("V -> Y", "V -> M -> Y", "V",
       // Params related to Y
       real Y_hat[k];
     ",
-    tparameters.statements = "
+    tparameters.statements = sprintf("
       // Params related to Y
       for (i in 1:k) {
-        Y_hat[i] <- (YX[i] * YB) + Yalpha[1] * Sigma_V[i]YuseU;
+        Y_hat[i] = (YX[i] * YB) + %s;
       }
-    ",
+    ", gsub("%DV%", "Y", alphaparams)),
     model.delcarations = "
       // Priors for Y location
       YB ~ normal(0, 1000);
@@ -181,7 +232,6 @@ vm_stan <- function(design = c("V -> Y", "V -> M -> Y", "V",
       // Likelihood for Y
       Y ~ normal(Y_hat, sigma_Y);
     ")
-  model.core.Y$tparameters.statements <- gsub("YuseU", ifelse(useU, " + Yalpha[2] * U[i]", ""), model.core.Y$tparameters.statements)
 
   model.core.M <- list(
     data = "
@@ -201,16 +251,16 @@ vm_stan <- function(design = c("V -> Y", "V -> M -> Y", "V",
       // Params related to M
       real M_hat[k];
     ",
-    tparameters.statements = "
+    tparameters.statements = sprintf("
       // Params related to M
       for (i in 1:k) {
-        M_hat[i] <- (MX[i] * MB) + Malpha[1] * Sigma_V[i]MuseU;
+        M_hat[i] = (MX[i] * MB) + %s;
       }
-    ",
+    ", gsub("%DV%", "M", alphaparams)),
     model.declarations = "
       // Priors for M location
-      MB ~ normal(0, 1000);
-      Malpha ~ normal(0, 1000);
+      MB ~ normal(0, 100);
+      Malpha ~ normal(0, 100);
       // Priors for M scale
       sigma_M ~ cauchy(0, 10);
     ",
@@ -218,7 +268,6 @@ vm_stan <- function(design = c("V -> Y", "V -> M -> Y", "V",
       // Likelihood for M
       M ~ normal(M_hat, sigma_M);
     ")
-  model.core.M$tparameters.statements <- gsub("MuseU", ifelse(useU, " + Malpha[2] * U[i]", ""), model.core.M$tparameters.statements)
 
   model_builder <- function(...) {
     pieces <- list(...)
@@ -257,7 +306,11 @@ vm_stan <- function(design = c("V -> Y", "V -> M -> Y", "V",
     `V -> M -> Y` = model_builder(model.core.V, model.core.Y, model.core.M),
     `V` = model_builder(model.core.V))
 
-  stan_model(model_code = model, save_dso=TRUE, ...)
+  if (template_only) {
+    model
+  } else {
+    stan_model(model_code = model, save_dso=TRUE, ...)
+  }
 }
 
 #' Calculate Initial Values for Stan VM Model
@@ -271,66 +324,98 @@ vm_stan <- function(design = c("V -> Y", "V -> M -> Y", "V",
 #'   \dQuote{V -> Y} for variability predicting an outcome,
 #'   \dQuote{V -> M -> Y} for mediation of variability on an outcome,
 #'   \dQuote{V} to take posterior samples of individual variability estimates alone.
-#' @param useU whether to include the random intercepts
+#' @param useU A logical value whether the latent intercept estimated in Stage 1 should
+#'   also be used as a predictor.  Defaults to \code{TRUE}.  Note if there is a
+#'   mediator as well as main outcome, the latent intercepts will be used as a predictor
+#'   for both.
+#' @param UQ A logical value whether the latent intercept estimated in Stage 1 should
+#'   also be used as a predictor with a qudratice effect.  Defaults to \code{FALSE}.
+#'   Note if there is a mediator as well as main outcome, the latent intercepts
+#'   will be used as a predictor for both.
+#' @param IIVQ A logical value whether the latent variabilities estimated in Stage 1 should
+#'   also be used as a predictor with a qudratice effect.  Defaults to \code{FALSE}.
+#'   Note if there is a mediator as well as main outcome, the latent intercepts
+#'   will be used as a predictor for both.
+#' @param centerU A numeric vector of length one (scalar) that is used to center the
+#'   latent intercept estimates before using as a predictor of the outcome / mediator.
+#'   Uses the formula: (U - centerU). Particularly useful when including quadratic terms.
+#' @param centerIIV A numeric vector of length one (scalar) that is used to center the
+#'   latent variability estimates before using as a predictor of the outcome / mediator.
+#'   Uses the formula: (IIV - centerIIV). Particularly useful when including quadratic terms.
 #' @param \dots Additional arguments (not currently used)
 #' @return A named list containing the initial values for Stan.
 #' @author Joshua F. Wiley <josh@@elkhartgroup.com>
 #' @keywords models
 #' @examples
 #' # make me!
-stan_inits <- function(stan.data, design = c("V -> Y", "V -> M -> Y", "V",
-    "X -> V", "X -> V -> Y", "X -> M -> V"), useU, ...) {
+stan_inits <- function(stan.data, design = c("V -> Y", "V -> M -> Y", "V", "X -> V", "X -> V -> Y", "X -> M -> V"),
+                       useU = TRUE, UQ = FALSE, IIVQ = FALSE, centerU = 0, centerIIV = 0, ...) {
 
   design <- match.arg(design)
   if (!design %in% c("V -> Y", "V -> M -> Y", "V")) {
     stop("Currently only V -> Y, V -> M -> Y, and V are implemented")
   }
 
-  # V inits
+  if (UQ & !useU) {
+    warning("UQ = TRUE but useU = FALSE, setting useU = TRUE")
+    useU <- TRUE
+  }
+
+                                        # V inits
   rg <- with(stan.data, res_gamma(V, VID))
 
   out <- with(stan.data, list(
-    VB = as.array(coef(lm.fit(VX, V))),
-    U = as.array(by_id(V, VID, mean, FALSE, na.rm=TRUE)-mean(V, na.rm=TRUE)),
-    shape = rg$alpha,
-    rate = rg$beta,
-    Sigma_V = as.array(sd_id(V, VID, FALSE))
-  ))
+                           VB = as.array(coef(lm.fit(VX, V))),
+                           U = as.array(by_id(V, VID, mean, FALSE, na.rm=TRUE) - mean(V, na.rm=TRUE)),
+                           shape = rg$alpha,
+                           rate = rg$beta,
+                           Sigma_V = as.array(sd_id(V, VID, FALSE))
+                         ))
 
   index <- (out$Sigma_V == 0) | is.na(out$Sigma_V)
-  # if zero or missing, replace with nonmissing minima
+                                        # if zero or missing, replace with nonmissing minima
   out$Sigma_V[index] <- min(out$Sigma_V[!index], na.rm=TRUE)
 
   out$sigma_U <- sd(out$U, na.rm=TRUE)
 
   dv_init <- function(X, dv, k) {
-      b <- coef(lm.fit(X, dv))
-      s.dv <- sd(dv, na.rm=TRUE)
-      list(sigma_dv = s.dv,
-           b = as.array(b[1:k]),
-           alpha = as.array(b[(k + 1):length(b)]))
+    b <- coef(lm.fit(X, dv))
+    s.dv <- sd(dv, na.rm=TRUE)
+    list(sigma_dv = s.dv,
+         b = as.array(b[1:k]),
+         alpha = as.array(b[(k + 1):length(b)]))
   }
 
-  if (useU) {
-    tmpV <- cbind(Res = out$Sigma_V, U = out$U)
-  } else {
-    tmpV <- cbind(Res = out$Sigma_V)
-  }
+  type <- paste0(as.integer(useU), as.integer(UQ), as.integer(IIVQ))
+
+  tmpV <- switch(type,
+                 "000" = cbind(Res = out$Sigma_V - centerIIV),
+                 "100" = cbind(Res = out$Sigma_V - centerIIV, U = out$U - centerU),
+                 ## "010" = , ## disallowed to have UQ = TRUE and useU = FALSE
+                 "110" = cbind(Res = out$Sigma_V - centerIIV, U = out$U - centerU,
+                               U2 = (out$U - centerU)^2),
+                 "001" = cbind(Res = out$Sigma_V - centerIIV, Res2 = (out$Sigma_V - centerIIV)^2),
+                 "101" = cbind(Res = out$Sigma_V - centerIIV, U = out$U - centerU,
+                               Res2 = (out$Sigma_V - centerIIV)^2),
+                 "011" =, ## disallowed to have UQ = TRUE and useU = FALSE
+                 "111" = cbind(Res = out$Sigma_V - centerIIV, U = out$U - centerU,
+                               Res2 = (out$Sigma_V - centerIIV)^2,U2 = (out$U - centerU)^2)
+                 )
 
   out <- c(out, switch(design,
-    `V -> Y` = {
-      tmpY <- with(stan.data, dv_init(cbind(YX, tmpV), Y, ncol(YX)))
-      names(tmpY) <- c("sigma_Y", "YB", "Yalpha")
-      tmpY
-    },
-    `V -> M -> Y` = {
-      tmpY <- with(stan.data, dv_init(cbind(YX, tmpV), Y, ncol(YX)))
-      names(tmpY) <- c("sigma_Y", "YB", "Yalpha")
-      tmpM <- with(stan.data, dv_init(cbind(MX, tmpV), M, ncol(MX)))
-      names(tmpM) <- c("sigma_M", "MB", "Malpha")
-      c(tmpY, tmpM)
-    },
-    `V` = c()))
+                       `V -> Y` = {
+                         tmpY <- with(stan.data, dv_init(cbind(YX, tmpV), Y, ncol(YX)))
+                         names(tmpY) <- c("sigma_Y", "YB", "Yalpha")
+                         tmpY
+                       },
+                       `V -> M -> Y` = {
+                         tmpY <- with(stan.data, dv_init(cbind(YX, tmpV), Y, ncol(YX)))
+                         names(tmpY) <- c("sigma_Y", "YB", "Yalpha")
+                         tmpM <- with(stan.data, dv_init(cbind(MX, tmpV), M, ncol(MX)))
+                         names(tmpM) <- c("sigma_M", "MB", "Malpha")
+                         c(tmpY, tmpM)
+                       },
+                       `V` = c()))
 
   return(out)
 }
@@ -364,6 +449,20 @@ stan_inits <- function(stan.data, design = c("V -> Y", "V -> M -> Y", "V",
 #'   also be used as a predictor.  Defaults to \code{TRUE}.  Note if there is a
 #'   mediator as well as main outcome, the latent intercepts will be used as a predictor
 #'   for both.
+#' @param UQ A logical value whether the latent intercept estimated in Stage 1 should
+#'   also be used as a predictor with a qudratice effect.  Defaults to \code{FALSE}.
+#'   Note if there is a mediator as well as main outcome, the latent intercepts
+#'   will be used as a predictor for both.
+#' @param IIVQ A logical value whether the latent variabilities estimated in Stage 1 should
+#'   also be used as a predictor with a qudratice effect.  Defaults to \code{FALSE}.
+#'   Note if there is a mediator as well as main outcome, the latent intercepts
+#'   will be used as a predictor for both.
+#' @param centerU A numeric vector of length one (scalar) that is used to center the
+#'   latent intercept estimates before using as a predictor of the outcome / mediator.
+#'   Uses the formula: (U - centerU). Particularly useful when including quadratic terms.
+#' @param centerIIV A numeric vector of length one (scalar) that is used to center the
+#'   latent variability estimates before using as a predictor of the outcome / mediator.
+#'   Uses the formula: (IIV - centerIIV). Particularly useful when including quadratic terms.
 #' @param totaliter The total number of iterations to be used (not including the
 #'   warmup iterations), these are distributed equally across multiple independent
 #'   chains.
@@ -375,11 +474,16 @@ stan_inits <- function(stan.data, design = c("V -> Y", "V -> M -> Y", "V",
 #'   initial values are estimated means, standard deviations, and coefficients from a
 #'   single level linear regression.
 #' @param modelfit A compiled Stan model (e.g., from a previous run).
+#' @param autoDrop A logical argument whether to automatically drop IDs that have
+#'   no variability.  Defaults to \code{TRUE}.
 #' @param opts A list giving options.  Currently only \code{SD_Tol} which controls
 #'   the tolerance for how small a variables standard deviation may be without
 #'   stopping estimation (this ensures that duplicate variables, or variables without
 #'   any variability are included as predictors).
 #' @param \dots Additional arguments passed to \code{stan}.
+#' @param template_only A logical, not commonly used. If \code{TRUE} returns
+#'   the Stan template code only, without actually compiling or running the Stan model.
+#'   Useful for modifying the default models.
 #' @return A named list containing the model \code{results}, the \code{model},
 #'   the \code{variable.names}, the \code{data}, the random \code{seeds},
 #'   and the initial function \code{.call}.
@@ -426,13 +530,21 @@ stan_inits <- function(stan.data, design = c("V -> Y", "V -> M -> Y", "V",
 varian <- function(y.formula, v.formula, m.formula, data,
                    design = c("V -> Y", "V -> M -> Y", "V",
                               "X -> V", "X -> V -> Y", "X -> M -> V"),
-                   useU = TRUE, totaliter = 2000, warmup = 1000, chains = 1,
-                   inits = NULL, modelfit, opts = list(SD_Tol = .01, pars = NULL), ...) {
+                   useU = TRUE, UQ = FALSE, IIVQ = FALSE, centerU = 0, centerIIV = 0,
+                   totaliter = 2000, warmup = 1000, chains = 1,
+                   inits = NULL, modelfit, autoDrop = TRUE,
+                   opts = list(SD_Tol = .01, pars = NULL), ...,
+                   template_only = FALSE) {
 
 
   design <- match.arg(design)
   if (!design %in% c("V -> Y", "V -> M -> Y", "V")) {
     stop("Currently only V -> Y, V -> M -> Y, and V are implemented")
+  }
+
+  if (UQ & !useU) {
+    warning("UQ = TRUE but useU = FALSE, setting useU = TRUE")
+    useU <- TRUE
   }
 
   stopifnot(is.data.frame(data))
@@ -443,9 +555,6 @@ varian <- function(y.formula, v.formula, m.formula, data,
 
   # logical flag for mediation
   med <- !missing(m.formula)
-
-  # drop any missing levels to avoid redudant dummy codes in model matrix
-  data <- droplevels(data)
 
   var.names <- c(list(
       V = all.vars(terms(as.Formula(v.formula), lhs = 1, rhs = -c(1, 2))),
@@ -463,15 +572,24 @@ varian <- function(y.formula, v.formula, m.formula, data,
     `V -> M -> Y` = as.Formula(y.formula, v.formula, m.formula),
     `V` = as.Formula(v.formula))
 
+  # drop any missing levels to avoid redudant dummy codes in model matrix
+  data <- droplevels(data)
+
   # make sure ID is a numeric/integer or a factor
   stopifnot(class(data[, var.names$VID]) %in% c("numeric", "integer", "factor"))
 
   test.VID <- sd_id(data[, var.names$V], data[, var.names$VID], long=FALSE)
 
   if (!all(test.VID != 0, na.rm=TRUE)) {
-    stop(sprintf("The following IDs have no variability in the first stage outcome:\n%s\nTry using\n%s\nto remove these from the data.",
-      paste(names(test.VID)[which(test.VID == 0)], collapse = ', '),
-      paste0("subset(your_data, sd_id(", var.names$V, ", ", var.names$VID, ") != 0)")))
+    if (autoDrop) {
+      warning(sprintf("The following IDs have no variability in the first stage outcome:\n%s\nThese will be removed from the data.",
+                      paste(names(test.VID)[which(test.VID == 0)], collapse = ', ')))
+      data <- droplevels(subset(data, sd_id(data[, var.names$V], data[, var.names$VID]) != 0))
+    } else {
+      stop(sprintf("The following IDs have no variability in the first stage outcome:\n%s\nTry using\n%s\nto remove these from the data.",
+                   paste(names(test.VID)[which(test.VID == 0)], collapse = ', '),
+                   paste0("subset(your_data, sd_id(", var.names$V, ", ", var.names$VID, ") != 0)")))
+    }
   }
 
   key <- list(OriginalID = data[, var.names$VID])
@@ -590,9 +708,9 @@ varian <- function(y.formula, v.formula, m.formula, data,
 
   p <- c(list(VX = ncol(mm$V)),
     switch(design,
-      `V -> Y` = list(YX = ncol(mm$Y), YX2 = 1L + useU),
-      `V -> M -> Y` = list(YX = ncol(mm$Y), YX2 = 1L + useU,
-                        MX = ncol(mm$M), MX2 = 1L + useU),
+      `V -> Y` = list(YX = ncol(mm$Y), YX2 = 1L + useU + UQ + IIVQ),
+      `V -> M -> Y` = list(YX = ncol(mm$Y), YX2 = 1L + useU + UQ + IIVQ,
+                        MX = ncol(mm$M), MX2 = 1L + useU + UQ + IIVQ),
       `V` = list()))
 
   stan.data <- c(list(V = vars$V, VX = mm$V, VID = vars$VID, pVX = p$VX, n = n, k = k),
@@ -603,14 +721,20 @@ varian <- function(y.formula, v.formula, m.formula, data,
       `V` = list()))
 
   if (is.null(inits)) {
-    inits <- tryCatch(list(stan_inits(stan.data, design, useU)), error = function(e) return(e))
+    inits <- tryCatch(list(stan_inits(
+      stan.data = stan.data, design = design,
+      useU = useU, UQ = UQ, IIVQ = IIVQ,
+      centerU = centerU, centerIIV = centerU)), error = function(e) return(e))
     if (inherits(inits, "error")) return(list(Inits = inits, stan.data = stan.data))
   }
 
   if (!missing(modelfit)) {
     model <- modelfit
   } else {
-    model <- vm_stan(design, useU=useU)
+    model <- vm_stan(design = design,
+                     useU = useU, UQ = UQ, IIVQ = IIVQ,
+                     centerU = centerU, centerIIV = centerU,
+                     template_only = template_only)
   }
 
   if (is.null(opts$pars)) {
@@ -624,11 +748,15 @@ varian <- function(y.formula, v.formula, m.formula, data,
     pars <- opts$pars
   }
 
-  # inits is just one list because even when multiple chains
-  # parallel_stan runs one chain per worker/core
+  ## inits is just one list because even when multiple chains
+  ## parallel_stan runs one chain per worker/core
+  if (!template_only) {
   res <- parallel_stan(modelfit = model, standata = stan.data,
       totaliter = totaliter, warmup = warmup, chains = chains,
       pars = pars, init = inits, ...)
+  } else if (template_only) {
+    res <- list(results = NULL, seeds = NULL)
+  }
 
   out <- list(
     results = res$results,
@@ -638,7 +766,12 @@ varian <- function(y.formula, v.formula, m.formula, data,
     seeds = res$seeds,
     .call = storedCall,
     inits = list(inits),
-    design = design
+    design = design,
+    pars = pars,
+    warmup = warmup,
+    chains = chains,
+    totaliter = totaliter,
+    useU = useU, UQ = UQ, IIVQ = IIVQ
   )
 
   class(out) <- c("vm", "list")

@@ -231,44 +231,127 @@ pval_smartformat <- function(p, d = 3, sd = 5) {
 #' side of zero.
 #'
 #' @param x a data vector to operate on
-#' @param digits Number of digits to round to for printing
-#' @param pretty Logical value whether prettified values should be returned.
-#'   Defaults to \code{FALSE}.
 #' @param \dots Additional arguments passed to \code{pval_smartformat}
 #'   to control p-value printing.
 #' @param na.rm Logical whether to remove NA values. Defaults to \code{TRUE}
-#' @return .
+#' @return A data frame of summary statistics
 #' @author Joshua F. Wiley <josh@@elkhartgroup.com>
 #' @export
 #' @keywords utilities
 #' @examples
 #'
 #' param_summary(rnorm(100))
-#' param_summary(rnorm(100), pretty = TRUE)
-param_summary <- function(x, digits = 2, pretty = FALSE, ..., na.rm = TRUE) {
-  res <- round(data.frame(Mean = mean(x, na.rm = na.rm),
+param_summary <- function(x, ..., na.rm = TRUE) {
+  data.frame(
+    Mean = mean(x, na.rm = na.rm),
     Median = median(x, na.rm = na.rm),
     SE = sd(x, na.rm = na.rm),
     LL2.5 = as.vector(quantile(x, probs = .025, na.rm = na.rm)),
-    UL97.5 = as.vector(quantile(x, probs = .975, na.rm = na.rm))),
-    digits = digits)
+    UL97.5 = as.vector(quantile(x, probs = .975, na.rm = na.rm)),
+    pvalue = pval_smartformat(empirical_pvalue(x)[["p-value"]], ...))
+}
 
-  p <- pval_smartformat(empirical_pvalue(x)[["p-value"]], ...)
-
+#' Format a data frame of summary statistics
+#'
+#' This functions nicely formats a data frame of parameter summary
+#' statistics and is designed to be used with the param_summary()
+#' function.
+#'
+#' @param d A data frame of the parameter summary statistics
+#' @param digits Number of digits to round to for printing
+#' @param pretty Logical value whether prettified values should be returned.
+#'   Defaults to \code{FALSE}.
+#' @return A formatted data frame of summary statistics or a formated
+#' vector (if \code{pretty = TRUE}).
+#' @author Joshua F. Wiley <josh@@elkhartgroup.com>
+#' @export
+#' @keywords utilities
+#' @examples
+#' set.seed(1234)
+#' xsum <- do.call(rbind, apply(matrix(rnorm(100*10), ncol = 10),
+#'   2, param_summary))
+#' rownames(xsum) <- letters[1:10]
+#' param_summary_format(xsum)
+#' param_summary_format(xsum, pretty = TRUE)
+#'
+#' rm(xsum)
+param_summary_format <- function(d, digits = 2, pretty = FALSE) {
   if (pretty) {
-    out <- sprintf("%s [%s, %s], %s",
-                   as.character(res$Mean),
-                   as.character(res$LL2.5),
-                   as.character(res$UL97.5),
-                   ifelse(grepl("<", p), paste0("p ", p), paste0("p = ", p)))
+    string <- sprintf("%%01.%df [%%01.%df, %%01.%df], %%s", digits, digits, digits)
+
+    out <- sprintf(string,
+                   d$Mean,
+                   d$LL2.5,
+                   d$UL97.5,
+                   ifelse(grepl("<", d$pvalue),
+                          paste0("p ", d$pvalue),
+                          paste0("p = ", d$pvalue)))
+    names(out) <- rownames(d)
   } else {
-    res[, 'p-value'] <- p
-    out <- res
-  }
+    out <- as.data.frame(lapply(d, function(x) {
+      if (is.numeric(x)) {
+        sprintf(sprintf("%%01.%df", digits), x)
+      } else {
+        x
+      }
+    }), stringsAsFactors = FALSE)
+    rownames(out) <- rownames(d)
+    }
 
   return(out)
 }
 
+
+summary.vm <- function(object, ...) {
+  tmp <- extract(object$results, permute = TRUE)
+
+  out <- with(tmp, {
+       vbsum <- do.call(rbind.data.frame, apply(VB, 2, param_summary))
+       rownames(vbsum) <- paste0("V<-", object$variable.names[[4]])
+
+       sigmaUsum <- param_summary(sigma_U)
+       rownames(sigmaUsum) <- "U<->U (residual sd)"
+       shapesum <- param_summary(shape)
+       rownames(shapesum) <- "Gamma (shape)"
+       ratesum <- param_summary(rate)
+       rownames(ratesum) <- "Gamma (rate)"
+
+       if (grepl("Y", object$design)) {
+         ybsum <- do.call(rbind.data.frame, apply(YB, 2, param_summary))
+         rownames(ybsum) <- paste0("Y<-", object$variable.names$YX)
+
+         yalphasum <- do.call(rbind.data.frame, apply(Yalpha, 2, param_summary))
+         rownames(yalphasum) <- paste0("Y<-", c("sigma", "mu", "sigma2", "mu2"))[c(TRUE, object$useU, object$IIVQ, object$UQ)]
+
+         sigmaYsum <- param_summary(sigma_Y)
+         rownames(sigmaYsum) <- "Y<->Y (residual sd)"
+       }
+
+       if (grepl("M", object$design)) {
+         mbsum <- do.call(rbind.data.frame, apply(MB, 2, param_summary))
+         rownames(mbsum) <- paste0("M<-", object$variable.names$MX)
+
+         malphasum <- do.call(rbind.data.frame, apply(Malpha, 2, param_summary))
+         rownames(malphasum) <- paste0("M<-", c("sigma", "mu", "sigma2", "mu2"))[c(TRUE, object$useU, object$IIVQ, object$UQ)]
+
+         sigmaMsum <- param_summary(sigma_M)
+         rownames(sigmaMsum) <- "M<->M (residual sd)"
+       }
+
+       if (grepl("Y", object$design) & grepl("M", object$design)) {
+         do.call(rbind, list(ybsum, yalphasum, sigmaYsum,
+                             mbsum, malphasum, sigmaMsum,
+                             vbsum, sigmaUsum, shapesum, ratesum))
+       } else if (grepl("Y", object$design)) {
+         do.call(rbind, list(ybsum, yalphasum, sigmaYsum,
+                             vbsum, sigmaUsum, shapesum, ratesum))
+       } else {
+         do.call(rbind, list(vbsum, sigmaUsum, shapesum, ratesum))
+       }
+     })
+
+  param_summary_format(out)
+}
 
 #' Simulate a Gamma Variability Model
 #'
@@ -404,7 +487,7 @@ parallel_stan <- function(model_code, standata, totaliter, warmup, thin = 1,
   stanres <- parLapplyLB(cl, 1:chains, function(i) {
     stanres <- sampling(object = stanmodel, data = standata, pars = pars,
       chains = 1, iter = eachiter + warmup, warmup = warmup,
-      thin = thin, seed = seeds[1], init = init, check_data = TRUE,
+      thin = thin, seed = seeds[i], init = init, check_data = TRUE,
       sample_file = sample_file, diagnostic_file = diagnostic_file,
       chain_id = i)
   })
