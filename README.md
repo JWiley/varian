@@ -24,7 +24,7 @@ models.
 
 ### R
 
-`R` version 3.1.1 or later is required.  You can download the latest
+`R` version 3.3.0 or later is required.  You can download the latest
 version of `R` here:
 
 <http://www.r-project.org/>
