@@ -39,7 +39,7 @@ Uses the formula: (U - centerU). Particularly useful when including quadratic te
 latent variability estimates before using as a predictor of the outcome / mediator.
 Uses the formula: (IIV - centerIIV). Particularly useful when including quadratic terms.}
 
-\item{\dots}{Additional arguments (not currently used)}
+\item{...}{Additional arguments passed to \code{sampling}.}
 }
 \value{
 A named list containing the initial values for Stan.

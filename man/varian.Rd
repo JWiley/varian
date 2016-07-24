@@ -80,11 +80,11 @@ the tolerance for how small a variables standard deviation may be without
 stopping estimation (this ensures that duplicate variables, or variables without
 any variability are included as predictors).}
 
+\item{...}{Additional arguments passed to \code{sampling}.}
+
 \item{template_only}{A logical, not commonly used. If \code{TRUE} returns
 the Stan template code only, without actually compiling or running the Stan model.
 Useful for modifying the default models.}
-
-\item{\dots}{Additional arguments passed to \code{stan}.}
 }
 \value{
 A named list containing the model \code{results}, the \code{model},

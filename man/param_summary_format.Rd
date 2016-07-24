@@ -4,7 +4,7 @@
 \alias{param_summary_format}
 \title{Format a data frame of summary statistics}
 \usage{
-param_summary_format(d, digits = 2, pretty = FALSE)
+param_summary_format(d, digits = getOption("digits"), pretty = FALSE)
 }
 \arguments{
 \item{d}{A data frame of the parameter summary statistics}

@@ -1,10 +1,26 @@
 # varian 0.3.0
 
+## Major Changes
+* `parallel_stan()` has been removed as the `rstan` sampling function
+  can run in parallel now.  To use multiple cores now, follow
+  the `rstan` approach of:
+  `rstan_options(auto_write = TRUE)`
+  `options(mc.cores = 4)` if you wanted 4 cores, for example.
+
+* `varian()` now only requires a single seed to be set, as this is
+  now controlled by `rstan` rather than the removed `parallel_stan()`
+  function.
+
 ## New Features
 * `varian()` can now include quadratic effects of latent means and
-  intraindividual variabilities.
+  intraindividual variabilities using the new arguments, `UQ = TRUE`
+  and `IIVQ = TRUE`.
 
 * `summary.vm()` method now added for a convenient summary.
+
+* `shinystan` package added as a suggested package. This implements
+  interactive and high quality model diagnostics. This will likely
+  replace the `vm_diagnostics()` function in the near future.
 
 # varian 0.2.0
 

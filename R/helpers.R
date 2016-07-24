@@ -275,7 +275,7 @@ param_summary <- function(x, ..., na.rm = TRUE) {
 #' param_summary_format(xsum, pretty = TRUE)
 #'
 #' rm(xsum)
-param_summary_format <- function(d, digits = 2, pretty = FALSE) {
+param_summary_format <- function(d, digits = getOption("digits"), pretty = FALSE) {
   if (pretty) {
     string <- sprintf("%%01.%df [%%01.%df, %%01.%df], %%s", digits, digits, digits)
 
@@ -301,8 +301,14 @@ param_summary_format <- function(d, digits = 2, pretty = FALSE) {
   return(out)
 }
 
-
-summary.vm <- function(object, ...) {
+#' Summary method for variability model objects
+#'
+#' @param object An object of class \code{vm}.
+#' @param digits The number of digits to use for rounding.
+#' @param \dots Additional arguments. Not currently used.
+#' @export
+#' @method summary vm
+summary.vm <- function(object, digits = getOption("digits"), ...) {
   tmp <- extract(object$results, permute = TRUE)
 
   out <- with(tmp, {
@@ -350,7 +356,7 @@ summary.vm <- function(object, ...) {
        }
      })
 
-  param_summary_format(out)
+  param_summary_format(out, digits = digits, ...)
 }
 
 #' Simulate a Gamma Variability Model
@@ -401,105 +407,3 @@ simulate_gvm <- function(n, k, mu, mu.sigma, sigma.shape, sigma.rate, seed = 534
     n = n, k = k, mu = mu, mu.sigma,
     sigma.shape, sigma.rate, sigma = sigma, seed)
 }
-
-#' Wrapper for the stan function to parallelize chains
-#'
-#' This funcntion takes Stan model code, compiles the Stan model,
-#' and then runs multiple chains in parallel.
-#'
-#' @param model_code A character string of Stan code
-#' @param standata A data list suitable for Stan for the model given
-#' @param totaliter The total number of iterations for inference.
-#'   Note that the total number of iterations is automatically
-#'   distributed across chains.
-#' @param warmup How many warmup iterations should be used?  Note
-#'   that every chain will use the same number of warmups and these
-#'   will be \emph{added on top of the total iterations} for each chain.
-#' @param thin The thin used, default to 1 indicating that all samples
-#'   be saved.
-#' @param chains The number of independent chains to run.
-#' @param cl (optional) The name of a cluster to use to run the chains.
-#'   If not specified, the function will make a new cluster.
-#' @param cores (optional) If the \code{cl} argument is not used,
-#'   this specifies the number of cores to make on the new cluster.
-#'   If both \code{cl} and \code{cores} are missing, defaults to
-#'   the minimum of the number of chains specified or the number of
-#'   cores available on the machine.
-#' @param seeds (optional) A vector of random seeds the same length as the number
-#'   of independent chains being run, to make results replicable.
-#'   If missing, random seeds will be generated and stored for reference
-#'   in the output.
-#' @param modelfit (optional) A compiled Stan model, if available, saves
-#'   compiling \code{model_code}.
-#' @param verbose A logical whether to print verbose output
-#'   (defaults to \code{FALSE})
-#' @param pars Parameter names from Stan to store
-#' @param sample_file The sample file for Stan
-#' @param diagnostic_file The diagnostic file for Stan
-#' @param init A character string (\dQuote{random}) or a named list of starting values.
-#' @param \dots Additional arguments, not currently used.
-#' @return a named list with three elements, the \code{results},
-#'   compiled Stan \code{model}, and the random \code{seeds}
-#' @author Joshua F. Wiley <josh@@elkhartgroup.com>
-#' @export
-#' @keywords utilities
-#' @examples
-#' # Make me!
-parallel_stan <- function(model_code, standata, totaliter, warmup, thin = 1,
-                  chains, cl, cores, seeds, modelfit, verbose = FALSE,
-                  pars = NA, sample_file=NA, diagnostic_file = NA, init = "random", ...) {
-  if (missing(cl)) {
-    if (missing(cores)) {
-      cores <- detectCores()
-    }
-    # make a cluster with nodes
-    cl <- makeCluster(min(cores, chains))
-  }
-  on.exit(stopCluster(cl))
-
-  if (!missing(modelfit)) {
-    stanmodel <- modelfit
-  } else {
-    if (verbose) cat("Compiling Stan model\n")
-    stanmodel <- stan_model(model_code = model_code, save_dso = TRUE)
-  }
-
-  if (verbose) cat("loading varian on workers\n")
-  clusterEvalQ(cl, {
-    require(varian)
-  })
-
-  if (missing(seeds)) {
-    seeds <- sample(.Random.seed, chains)
-  }
-
-  eachiter <- ceiling(totaliter/chains)
-
-  fooenv <- environment()
-
-  clusterExport(cl, varlist = c(
-      "stanmodel", "standata", "pars",
-      "eachiter", "warmup", "thin", "seeds", "init",
-      "sample_file", "diagnostic_file"),
-    envir = fooenv)
-
-  if (verbose) cat("Sampling from Stan\n")
-  stanres <- parLapplyLB(cl, 1:chains, function(i) {
-    stanres <- sampling(object = stanmodel, data = standata, pars = pars,
-      chains = 1, iter = eachiter + warmup, warmup = warmup,
-      thin = thin, seed = seeds[i], init = init, check_data = TRUE,
-      sample_file = sample_file, diagnostic_file = diagnostic_file,
-      chain_id = i)
-  })
-
-  if (chains > 1) {
-    if (verbose) cat("Combining chains\n")
-
-    stanres <- tryCatch(sflist2stanfit(stanres), error = function(e) return(results = e))
-  } else {
-    stanres <- stanres[[1]]
-  }
-
-  list(results = stanres, model = stanmodel, seeds = seeds)
-}
-

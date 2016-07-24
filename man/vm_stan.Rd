@@ -37,11 +37,11 @@ Uses the formula: (U - centerU). Particularly useful when including quadratic te
 latent variability estimates before using as a predictor of the outcome / mediator.
 Uses the formula: (IIV - centerIIV). Particularly useful when including quadratic terms.}
 
-\item{template_only}{A logical, not commonly used. If \code{TRUE} returns
-the Stan template code only, without actually compiling the Stan model.
-Useful for modifying the default models.}
+\item{...}{Additional arguments passed to \code{sampling}.}
 
-\item{\dots}{Additional arguments passed to \code{stan_model}.}
+\item{template_only}{A logical, not commonly used. If \code{TRUE} returns
+the Stan template code only, without actually compiling or running the Stan model.
+Useful for modifying the default models.}
 }
 \value{
 A compiled Stan model.

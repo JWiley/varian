@@ -66,32 +66,7 @@
 #'
 #' Internal function to create and compile a Stan model.
 #'
-#' @param design A character string indicating the type of model to be run.  One of
-#'   \dQuote{V -> Y} for variability predicting an outcome,
-#'   \dQuote{V -> M -> Y} for mediation of variability on an outcome,
-#'   \dQuote{V} to take posterior samples of individual variability estimates alone.
-#' @param useU A logical value whether the latent intercept estimated in Stage 1 should
-#'   also be used as a predictor.  Defaults to \code{TRUE}.  Note if there is a
-#'   mediator as well as main outcome, the latent intercepts will be used as a predictor
-#'   for both.
-#' @param UQ A logical value whether the latent intercept estimated in Stage 1 should
-#'   also be used as a predictor with a qudratice effect.  Defaults to \code{FALSE}.
-#'   Note if there is a mediator as well as main outcome, the latent intercepts
-#'   will be used as a predictor for both.
-#' @param IIVQ A logical value whether the latent variabilities estimated in Stage 1 should
-#'   also be used as a predictor with a qudratice effect.  Defaults to \code{FALSE}.
-#'   Note if there is a mediator as well as main outcome, the latent intercepts
-#'   will be used as a predictor for both.
-#' @param centerU A numeric vector of length one (scalar) that is used to center the
-#'   latent intercept estimates before using as a predictor of the outcome / mediator.
-#'   Uses the formula: (U - centerU). Particularly useful when including quadratic terms.
-#' @param centerIIV A numeric vector of length one (scalar) that is used to center the
-#'   latent variability estimates before using as a predictor of the outcome / mediator.
-#'   Uses the formula: (IIV - centerIIV). Particularly useful when including quadratic terms.
-#' @param \dots Additional arguments passed to \code{stan_model}.
-#' @param template_only A logical, not commonly used. If \code{TRUE} returns
-#'   the Stan template code only, without actually compiling the Stan model.
-#'   Useful for modifying the default models.
+#' @inheritParams varian
 #' @return A compiled Stan model.
 #' @author Joshua F. Wiley <josh@@elkhartgroup.com>
 #' @keywords models
@@ -125,23 +100,13 @@ vm_stan <- function(design = c("V -> Y", "V -> M -> Y", "V", "X -> V", "X -> V -
     centerIIV <- ""
   }
 
-  type <- paste0(as.integer(useU), as.integer(UQ), as.integer(IIVQ))
-
-  alphaparams <- switch(type,
-         "000" = sprintf("%%DV%%alpha[1] * (Sigma_V[i]%s)", centerIIV),
-         "100" = sprintf("%%DV%%alpha[1] * (Sigma_V[i]%s) + %%DV%%alpha[2] * (U[i]%s)",
-                         centerIIV, centerU),
-         ## "010" = , ## disallowed to have UQ = TRUE and useU = FALSE
-         "110" = sprintf("%%DV%%alpha[1] * (Sigma_V[i]%s) + %%DV%%alpha[2] * (U[i]%s) + %%DV%%alpha[3] * pow(U[i]%s, 2)",
-                         centerIIV, centerU, centerU),
-         "001" = sprintf("%%DV%%alpha[1] * (Sigma_V[i]%s) + %%DV%%alpha[2] * pow(Sigma_V[i]%s, 2)",
-                         centerIIV, centerIIV),
-         "101" = sprintf("%%DV%%alpha[1] * (Sigma_V[i]%s) + %%DV%%alpha[2] * (U[i]%s) + %%DV%%alpha[3] * pow(Sigma_V[i]%s, 2)",
-                         centerIIV, centerU, centerIIV),
-         "011" =, ## disallowed to have UQ = TRUE and useU = FALSE
-         "111" = sprintf("%%DV%%alpha[1] * (Sigma_V[i]%s) + %%DV%%alpha[2] * (U[i]%s) + %%DV%%alpha[3] * pow(Sigma_V[i]%s, 2) + %%DV%%alpha[4] * pow(U[i]%s, 2)",
-                         centerIIV, centerU, centerIIV, centerU)
-         )
+  type <- c(TRUE, useU, IIVQ, UQ)
+  alphaparams <- paste(c(
+    sprintf("%%DV%%alpha[%d] * (Sigma_V[i]%s)", cumsum(type)[1], centerIIV),
+    sprintf("%%DV%%alpha[%d] * (U[i]%s)", cumsum(type)[2], centerU),
+    sprintf("%%DV%%alpha[%d] * pow(Sigma_V[i]%s, 2)", cumsum(type)[3], centerIIV),
+    sprintf("%%DV%%alpha[%d] * pow(U[i]%s, 2)", cumsum(type)[4], centerU))[type],
+    collapse = " + ")
 
   ## show the priors
   ## x <- seq(.001, 50, by = .01)
@@ -320,29 +285,7 @@ vm_stan <- function(design = c("V -> Y", "V -> M -> Y", "V", "X -> V", "X -> V -
 #' and linear regressions.
 #'
 #' @param stan.data A list containing the data to be passed to Stan
-#' @param design A character string indicating the type of model to be run.  One of
-#'   \dQuote{V -> Y} for variability predicting an outcome,
-#'   \dQuote{V -> M -> Y} for mediation of variability on an outcome,
-#'   \dQuote{V} to take posterior samples of individual variability estimates alone.
-#' @param useU A logical value whether the latent intercept estimated in Stage 1 should
-#'   also be used as a predictor.  Defaults to \code{TRUE}.  Note if there is a
-#'   mediator as well as main outcome, the latent intercepts will be used as a predictor
-#'   for both.
-#' @param UQ A logical value whether the latent intercept estimated in Stage 1 should
-#'   also be used as a predictor with a qudratice effect.  Defaults to \code{FALSE}.
-#'   Note if there is a mediator as well as main outcome, the latent intercepts
-#'   will be used as a predictor for both.
-#' @param IIVQ A logical value whether the latent variabilities estimated in Stage 1 should
-#'   also be used as a predictor with a qudratice effect.  Defaults to \code{FALSE}.
-#'   Note if there is a mediator as well as main outcome, the latent intercepts
-#'   will be used as a predictor for both.
-#' @param centerU A numeric vector of length one (scalar) that is used to center the
-#'   latent intercept estimates before using as a predictor of the outcome / mediator.
-#'   Uses the formula: (U - centerU). Particularly useful when including quadratic terms.
-#' @param centerIIV A numeric vector of length one (scalar) that is used to center the
-#'   latent variability estimates before using as a predictor of the outcome / mediator.
-#'   Uses the formula: (IIV - centerIIV). Particularly useful when including quadratic terms.
-#' @param \dots Additional arguments (not currently used)
+#' @inheritParams varian
 #' @return A named list containing the initial values for Stan.
 #' @author Joshua F. Wiley <josh@@elkhartgroup.com>
 #' @keywords models
@@ -480,7 +423,7 @@ stan_inits <- function(stan.data, design = c("V -> Y", "V -> M -> Y", "V", "X ->
 #'   the tolerance for how small a variables standard deviation may be without
 #'   stopping estimation (this ensures that duplicate variables, or variables without
 #'   any variability are included as predictors).
-#' @param \dots Additional arguments passed to \code{stan}.
+#' @param ... Additional arguments passed to \code{sampling}.
 #' @param template_only A logical, not commonly used. If \code{TRUE} returns
 #'   the Stan template code only, without actually compiling or running the Stan model.
 #'   Useful for modifying the default models.
@@ -488,7 +431,7 @@ stan_inits <- function(stan.data, design = c("V -> Y", "V -> M -> Y", "V", "X ->
 #'   the \code{variable.names}, the \code{data}, the random \code{seeds},
 #'   and the initial function \code{.call}.
 #' @author Joshua F. Wiley <josh@@elkhartgroup.com>
-#' @import Formula
+#' @import Formula rstan
 #' @export
 #' @keywords models
 #' @examples
@@ -751,9 +694,12 @@ varian <- function(y.formula, v.formula, m.formula, data,
   ## inits is just one list because even when multiple chains
   ## parallel_stan runs one chain per worker/core
   if (!template_only) {
-  res <- parallel_stan(modelfit = model, standata = stan.data,
-      totaliter = totaliter, warmup = warmup, chains = chains,
-      pars = pars, init = inits, ...)
+    res <- sampling(object = model,
+                    data = stan.data, pars = pars,
+                    chains = chains,
+                    iter = round(ceiling(totaliter/chains) + warmup),
+                    warmup = warmup,
+                    init = inits, check_data = TRUE, ...)
   } else if (template_only) {
     res <- list(results = NULL, seeds = NULL)
   }
