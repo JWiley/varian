@@ -699,7 +699,7 @@ varian <- function(y.formula, v.formula, m.formula, data,
                     chains = chains,
                     iter = round(ceiling(totaliter/chains) + warmup),
                     warmup = warmup,
-                    init = inits, check_data = TRUE, ...)
+                    init = rep(inits, chains), check_data = TRUE, ...)
   } else if (template_only) {
     res <- list(results = NULL, seeds = NULL)
   }
