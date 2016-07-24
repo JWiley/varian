@@ -701,15 +701,14 @@ varian <- function(y.formula, v.formula, m.formula, data,
                     warmup = warmup,
                     init = rep(inits, chains), check_data = TRUE, ...)
   } else if (template_only) {
-    res <- list(results = NULL, seeds = NULL)
+    res <- NULL
   }
 
   out <- list(
-    results = res$results,
+    results = res,
     model = model,
     variable.names = var.names,
     data = c(stan.data, list(IDkey = key)),
-    seeds = res$seeds,
     .call = storedCall,
     inits = list(inits),
     design = design,
