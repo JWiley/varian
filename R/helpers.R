@@ -231,6 +231,8 @@ pval_smartformat <- function(p, d = 3, sd = 5) {
 #' side of zero.
 #'
 #' @param x a data vector to operate on
+#' @param trans A function to transform the data. Used for summaries,
+#'   but not p-values. Defaults to the identity function.
 #' @param \dots Additional arguments passed to \code{pval_smartformat}
 #'   to control p-value printing.
 #' @param na.rm Logical whether to remove NA values. Defaults to \code{TRUE}
@@ -241,13 +243,13 @@ pval_smartformat <- function(p, d = 3, sd = 5) {
 #' @examples
 #'
 #' param_summary(rnorm(100))
-param_summary <- function(x, ..., na.rm = TRUE) {
+param_summary <- function(x, trans = I, ..., na.rm = TRUE) {
   data.frame(
-    Mean = mean(x, na.rm = na.rm),
-    Median = median(x, na.rm = na.rm),
-    SE = sd(x, na.rm = na.rm),
-    LL2.5 = as.vector(quantile(x, probs = .025, na.rm = na.rm)),
-    UL97.5 = as.vector(quantile(x, probs = .975, na.rm = na.rm)),
+    Mean = trans(mean(x, na.rm = na.rm)),
+    Median = trans(median(x, na.rm = na.rm)),
+    SE = sd(trans(x), na.rm = na.rm),
+    LL2.5 = trans(as.vector(quantile(x, probs = .025, na.rm = na.rm))),
+    UL97.5 = trans(as.vector(quantile(x, probs = .975, na.rm = na.rm))),
     pvalue = pval_smartformat(empirical_pvalue(x)[["p-value"]], ...))
 }
 
@@ -313,7 +315,7 @@ summary.vm <- function(object, digits = getOption("digits"), ...) {
 
   out <- with(tmp, {
        vbsum <- do.call(rbind.data.frame, apply(VB, 2, param_summary))
-       rownames(vbsum) <- paste0("V<-", object$variable.names[[4]])
+       rownames(vbsum) <- paste0("V<-", object$variable.names$VX)
 
        sigmaUsum <- param_summary(sigma_U)
        rownames(sigmaUsum) <- "U<->U (residual sd)"

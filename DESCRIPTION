@@ -6,7 +6,7 @@ Description: Uses a Bayesian model to
     estimate the variability in a repeated
     measure outcome and use that as an outcome or a predictor
     in a second stage model.
-Date: 2016-7-23
+Date: 2016-8-24
 Author: Joshua F. Wiley [aut, cre],
     Elkhart Group Limited [cph]
 Maintainer: Joshua F. Wiley <josh@elkhartgroup.com>

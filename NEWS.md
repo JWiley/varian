@@ -12,7 +12,7 @@
   function.
 
 ## New Features
-* `varian()` can now include quadratic effects of latent means and
+* `varian()` can now include **quadratic** effects of latent means and
   intraindividual variabilities using the new arguments, `UQ = TRUE`
   and `IIVQ = TRUE`.
 

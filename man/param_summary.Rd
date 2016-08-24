@@ -4,10 +4,13 @@
 \alias{param_summary}
 \title{Calculates summaries for a parameter}
 \usage{
-param_summary(x, ..., na.rm = TRUE)
+param_summary(x, trans = I, ..., na.rm = TRUE)
 }
 \arguments{
 \item{x}{a data vector to operate on}
+
+\item{trans}{A function to transform the data. Used for summaries,
+but not p-values. Defaults to the identity function.}
 
 \item{na.rm}{Logical whether to remove NA values. Defaults to \code{TRUE}}
 

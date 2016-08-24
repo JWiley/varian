@@ -580,7 +580,7 @@ varian <- function(y.formula, v.formula, m.formula, data,
               M = model.matrix(m.formula, data = mf)[keep.obs, , drop = FALSE]),
             `V` = list()))
 
-  var.names <- c(var.names, list(VX <- colnames(mm$V)),
+  var.names <- c(var.names, list(VX = colnames(mm$V)),
                  switch(design,
                    `V -> Y` = list(
                      YX = colnames(mm$Y)),
