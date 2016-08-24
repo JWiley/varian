@@ -19,7 +19,3 @@ test_that("rolling_diff estimates correctly", {
 test_that("rolling_diff by ID estimates correctly", {
   expect_that(rolling_diff_id(c(1:4, 1, 3, 5, 7), rep(1:2, each = 4), FALSE, 4), is_equivalent_to(array(c(3, 6))))
 })
-
-test_that("empirical_pvalue returns correct p-values", {
-  expect_that(empirical_pvalue(c(-1, 1:3))["p-value"], is_equivalent_to(.5))
-})

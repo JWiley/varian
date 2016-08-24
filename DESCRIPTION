@@ -18,6 +18,7 @@ Depends:
     ggplot2
 Imports:
     stats,
+    JWileymisc,
     MASS,
     Formula,
     grid,
