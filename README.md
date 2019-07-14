@@ -63,7 +63,7 @@ You can install:
 
     ```R
     install.packages("devtools")
-    devtools::install_github("ElkhartGroup/varian")
+    devtools::install_github("JWiley/varian")
     ```
 
 ## Learn about the theory
