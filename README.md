@@ -74,7 +74,7 @@ See our open access pre-print on the arXiv <http://arxiv.org/abs/1411.2961>.
 # More
 
 * If you find a bug or have a feature request, please let us know on
-  the issue tracker: <https://github.com/ElkhartGroup/varian/issues>.
+  the issue tracker: <https://github.com/JWiley/varian/issues>.
 
-* Have questions or need support?  Email us at info@elkhartgroup.com
+* Have questions or need support?  Email us at joshua.wiley@monash.edu
   and mention "varian" in the subject.
