@@ -47,7 +47,6 @@ sim.data <- with(raw.sim, {
 })
 }
 \author{
-Joshua F. Wiley <josh@elkhartgroup.com>
+Joshua F. Wiley <jwiley.psych@gmail.com>
 }
 \keyword{utilities}
-

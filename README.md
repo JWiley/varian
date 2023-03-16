@@ -1,7 +1,3 @@
-<img src="http://elkhartgroup.com/images/varian_logo.png"
-	 alt="varian logo"
-	 style = "width: 650px; height: 160px;"/>
-
 `varian` is a free, open source `R` package for *vari*ability
 *an*alysis using Bayesian inference.
 
@@ -12,7 +8,6 @@ intercepts/slopes, the residual variance is a random variable by
 ID.  The latent residual variance estimates are then used as
 predictors in a regression of another outcome.
 
-[![Build Status](https://travis-ci.org/ElkhartGroup/varian.svg?branch=master)](https://travis-ci.org/ElkhartGroup/varian)
 [![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/varian)](http://cran.r-project.org/package=varian)
 
 # Getting Started
@@ -24,7 +19,7 @@ models.
 
 ### R
 
-`R` version 3.3.0 or later is required.  You can download the latest
+`R` version 4.0.0 or later is required.  You can download the latest
 version of `R` here:
 
 <http://www.r-project.org/>
@@ -76,5 +71,5 @@ See our open access pre-print on the arXiv <http://arxiv.org/abs/1411.2961>.
 * If you find a bug or have a feature request, please let us know on
   the issue tracker: <https://github.com/JWiley/varian/issues>.
 
-* Have questions or need support?  Email us at joshua.wiley@monash.edu
-  and mention "varian" in the subject.
+* Have questions or need support?  Open a ticket on the issue tracker:
+  <https://github.com/JWiley/varian/issues>.

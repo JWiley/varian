@@ -4,9 +4,16 @@
 \alias{stan_inits}
 \title{Calculate Initial Values for Stan VM Model}
 \usage{
-stan_inits(stan.data, design = c("V -> Y", "V -> M -> Y", "V", "X -> V",
-  "X -> V -> Y", "X -> M -> V"), useU = TRUE, UQ = FALSE, IIVQ = FALSE,
-  centerU = 0, centerIIV = 0, ...)
+stan_inits(
+  stan.data,
+  design = c("V -> Y", "V -> M -> Y", "V", "X -> V", "X -> V -> Y", "X -> M -> V"),
+  useU = TRUE,
+  UQ = FALSE,
+  IIVQ = FALSE,
+  centerU = 0,
+  centerIIV = 0,
+  ...
+)
 }
 \arguments{
 \item{stan.data}{A list containing the data to be passed to Stan}
@@ -56,4 +63,3 @@ and linear regressions.
 Joshua F. Wiley <josh@elkhartgroup.com>
 }
 \keyword{models}
-

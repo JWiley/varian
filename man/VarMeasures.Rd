@@ -3,11 +3,12 @@
 \name{Variability_Measures}
 \alias{Variability_Measures}
 \alias{by_id}
+\alias{sd_id}
 \alias{rmssd}
-\alias{rmssd_id}
+\alias{rmssid_id}
 \alias{rolling_diff}
 \alias{rolling_diff_id}
-\alias{sd_id}
+\alias{rmssd_id}
 \title{Variability Measures}
 \usage{
 by_id(x, ID, fun, long = TRUE, ...)
@@ -34,10 +35,10 @@ vector.  Should be the same length as \code{x}.}
 \item{long}{A logical indicating whether to return results in
 \dQuote{long} form (the default) or wide (if \code{FALSE}).}
 
+\item{\dots}{Additional arguments passed on to \code{fun}}
+
 \item{window}{An integer indicating the size of the rolling window.
 Must be at least the length of \code{x}.}
-
-\item{\dots}{Additional arguments passed on to \code{fun}}
 }
 \value{
 \code{by_id} - A vector the same length as \code{x}
@@ -92,7 +93,6 @@ rolling_diff(c(1, 4, 3, 4, 5))
 rolling_diff_id(mtcars$mpg, mtcars$cyl, window = 3)
 }
 \author{
-Joshua F. Wiley <josh@elkhartgroup.com>
+Joshua F. Wiley <jwiley.psych@gmail.com>
 }
 \keyword{utilities}
-

@@ -35,7 +35,6 @@ are also shown.
 # Make Me!
 }
 \author{
-Joshua F. Wiley <josh@elkhartgroup.com>
+Joshua F. Wiley <jwiley.psych@gmail.com>
 }
 \keyword{hplot}
-

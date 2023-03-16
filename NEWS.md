@@ -5,7 +5,7 @@
   can run in parallel now.  To use multiple cores now, follow
   the `rstan` approach of:
   `rstan_options(auto_write = TRUE)`
-  `options(mc.cores = 4)` if you wanted 4 cores, for example.
+  `options(mc.cores = 4)` if you wanted 4 cores, for example, 
 
 * `varian()` now only requires a single seed to be set, as this is
   now controlled by `rstan` rather than the removed `parallel_stan()`

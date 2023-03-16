@@ -16,7 +16,7 @@
 #'   for displaying p-values
 #' @param \dots Additional arguments (not currently used)
 #' @return A list containing the \code{Combined} and the \code{Individual} plot objects.
-#' @author Joshua F. Wiley <josh@@elkhartgroup.com>
+#' @author Joshua F. Wiley <jwiley.psych@@gmail.com>
 #' @importFrom JWileymisc empirical_pvalue
 #' @export
 #' @keywords hplot
@@ -113,12 +113,12 @@ vmp_plot <- function(alpha, useU = TRUE, plot = TRUE, digits = 3, ...) {
 #'   for the plots.  Defaults to \code{TRUE}.
 #' @param \dots Additional arguments not currently used
 #' @return A graphical object
-#' @author Joshua F. Wiley <josh@@elkhartgroup.com>
+#' @author Joshua F. Wiley <jwiley.psych@@gmail.com>
 #' @export
 #' @keywords hplot
 #' @examples
 #' # Make Me!
-vm_diagnostics <- function(object, plot=TRUE, ...) {
+vm_diagnostics <- function(object, plot = TRUE, ...) {
   if (inherits(object, "vm")) {
     object <- object$results
   }

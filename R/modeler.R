@@ -68,7 +68,7 @@
 #'
 #' @inheritParams varian
 #' @return A compiled Stan model.
-#' @author Joshua F. Wiley <josh@@elkhartgroup.com>
+#' @author Joshua F. Wiley <jwiley.psych@@gmail.com>
 #' @keywords models
 #' @examples
 #' varian:::vm_stan("V -> Y", useU=TRUE, template_only = TRUE)
@@ -430,8 +430,9 @@ stan_inits <- function(stan.data, design = c("V -> Y", "V -> M -> Y", "V", "X ->
 #' @return A named list containing the model \code{results}, the \code{model},
 #'   the \code{variable.names}, the \code{data}, the random \code{seeds},
 #'   and the initial function \code{.call}.
-#' @author Joshua F. Wiley <josh@@elkhartgroup.com>
+#' @author Joshua F. Wiley <jwiley.psych@@gmail.com>
 #' @import Formula rstan
+#' @importFrom extraoperators %!in% %?==% %a!in%
 #' @export
 #' @keywords models
 #' @examples
@@ -448,7 +449,8 @@ stan_inits <- function(stan.data, design = c("V -> Y", "V -> M -> Y", "V", "X ->
 #'       ID = Data$ID2)
 #'   })
 #'   m <- varian(y2 ~ x1 + x2, y ~ 1 | ID, data = sim.data, design = "V -> Y",
-#'     totaliter = 10000, warmup = 1500, thin = 10, chains = 4, verbose=TRUE)
+#'     totaliter = 10000, warmup = 1500, thin = 10, chains = 4, cores = 4,
+#'     verbose=TRUE)
 #'
 #'   # check diagnostics
 #'   vm_diagnostics(m)
@@ -466,7 +468,8 @@ stan_inits <- function(stan.data, design = c("V -> Y", "V -> M -> Y", "V", "X ->
 #'   })
 #'   # warning: may take several minutes
 #'   m2 <- varian(y2 ~ x1 + x2, y ~ 1 | ID, data = sim.data2, design = "V -> Y",
-#'     totaliter = 10000, warmup = 1500, thin = 10, chains = 4, verbose=TRUE)
+#'     totaliter = 10000, warmup = 1500, thin = 10, chains = 4, cores = 4,
+#'     verbose=TRUE)
 #'   # check diagnostics
 #'   vm_diagnostics(m2)
 #' }
@@ -481,11 +484,11 @@ varian <- function(y.formula, v.formula, m.formula, data,
 
 
   design <- match.arg(design)
-  if (!design %in% c("V -> Y", "V -> M -> Y", "V")) {
+  if (design %!in% c("V -> Y", "V -> M -> Y", "V")) {
     stop("Currently only V -> Y, V -> M -> Y, and V are implemented")
   }
 
-  if (UQ & !useU) {
+  if (UQ && !useU) {
     warning("UQ = TRUE but useU = FALSE, setting useU = TRUE")
     useU <- TRUE
   }
@@ -523,14 +526,14 @@ varian <- function(y.formula, v.formula, m.formula, data,
 
   test.VID <- sd_id(data[, var.names$V], data[, var.names$VID], long=FALSE)
 
-  if (!all(test.VID != 0, na.rm=TRUE)) {
+  if (test.VID %a!in% 0) {
     if (autoDrop) {
       warning(sprintf("The following IDs have no variability in the first stage outcome:\n%s\nThese will be removed from the data.",
-                      paste(names(test.VID)[which(test.VID == 0)], collapse = ', ')))
+                      paste(names(test.VID)[test.VID %?==% 0], collapse = ', ')))
       data <- droplevels(subset(data, sd_id(data[, var.names$V], data[, var.names$VID]) != 0))
     } else {
       stop(sprintf("The following IDs have no variability in the first stage outcome:\n%s\nTry using\n%s\nto remove these from the data.",
-                   paste(names(test.VID)[which(test.VID == 0)], collapse = ', '),
+                   paste(names(test.VID)[test.VID %?==% 0], collapse = ', '),
                    paste0("subset(your_data, sd_id(", var.names$V, ", ", var.names$VID, ") != 0)")))
     }
   }

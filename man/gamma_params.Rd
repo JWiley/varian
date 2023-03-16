@@ -19,7 +19,6 @@ distribution would be from a data vector.  It is used internally to
 generate start values.
 }
 \author{
-Joshua F. Wiley <josh@elkhartgroup.com>
+Joshua F. Wiley <jwiley.psych@gmail.com>
 }
 \keyword{utilities}
-

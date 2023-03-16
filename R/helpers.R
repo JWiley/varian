@@ -20,7 +20,7 @@
 #' @param long A logical indicating whether to return results in
 #'   \dQuote{long} form (the default) or wide (if \code{FALSE}).
 #' @param \dots Additional arguments passed on to \code{fun}
-#' @author Joshua F. Wiley <josh@@elkhartgroup.com>
+#' @author Joshua F. Wiley <jwiley.psych@@gmail.com>
 NULL
 
 
@@ -141,7 +141,7 @@ rolling_diff_id <- function(x, ID, long=TRUE, window = 4) {
 #' @param x a data vector to operate on
 #' @return a list of the shape (alpha) and rate (beta) parameters
 #'   and the mean and variance
-#' @author Joshua F. Wiley <josh@@elkhartgroup.com>
+#' @author Joshua F. Wiley <jwiley.psych@@gmail.com>
 #' @keywords utilities
 gamma_params <- function(x) {
   m <- mean(x, na.rm=TRUE)
@@ -163,7 +163,7 @@ gamma_params <- function(x) {
 #' @param ID an ID variable of the same length as \code{x}
 #' @return a list of the shape (alpha) and rate (beta) parameters
 #'   and the mean and variance
-#' @author Joshua F. Wiley <josh@@elkhartgroup.com>
+#' @author Joshua F. Wiley <jwiley.psych@@gmail.com>
 #' @export
 #' @keywords utilities
 #' @examples
@@ -253,7 +253,7 @@ summary.vm <- function(object, digits = getOption("digits"), ...) {
 #' @param seed the random seed, used to make simulations reproductible.
 #'   Defaults to 5346 (arbitrarily).
 #' @return a list of the data, IDs, and the parameters used for the simulation
-#' @author Joshua F. Wiley <josh@@elkhartgroup.com>
+#' @author Joshua F. Wiley <jwiley.psych@@gmail.com>
 #' @export
 #' @import MASS
 #' @keywords utilities

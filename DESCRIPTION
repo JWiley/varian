@@ -6,19 +6,20 @@ Description: Uses a Bayesian model to
     estimate the variability in a repeated
     measure outcome and use that as an outcome or a predictor
     in a second stage model.
-Date: 2016-8-24
+Date: 2023-03-16
 Author: Joshua F. Wiley [aut, cre],
     Elkhart Group Limited [cph]
-Maintainer: Joshua F. Wiley <josh@elkhartgroup.com>
-URL: https://github.com/ElkhartGroup/varian
-BugReports: https://github.com/ElkhartGroup/varian/issues
+Maintainer: Joshua F. Wiley <jwiley.psych@gmail.com>
+URL: https://github.com/JWiley/varian
+BugReports: https://github.com/JWiley/varian/issues
 Depends:
-    R (>= 3.3.0),
-    rstan (>= 2.10.0),
+    R (>= 4.0.0),
+    rstan (>= 2.21.0),
     ggplot2
 Imports:
     stats,
     JWileymisc,
+    extraoperators,
     MASS,
     Formula,
     grid,
@@ -28,4 +29,5 @@ Suggests:
     testthat
 LazyLoad: yes
 License: MIT + file LICENSE
-RoxygenNote: 5.0.1
+Encoding: UTF-8
+RoxygenNote: 7.2.3

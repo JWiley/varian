@@ -37,7 +37,6 @@ set.seed(1234) # make reproducible
 vmp_plot(matrix(rnorm(1000), ncol = 2))
 }
 \author{
-Joshua F. Wiley <josh@elkhartgroup.com>
+Joshua F. Wiley <jwiley.psych@gmail.com>
 }
 \keyword{hplot}
-

@@ -3,15 +3,29 @@
 \docType{package}
 \name{varian}
 \alias{varian}
-\alias{varian-package}
 \title{Variablity Analysis using a Bayesian Variability Model (VM)}
 \usage{
-varian(y.formula, v.formula, m.formula, data, design = c("V -> Y",
-  "V -> M -> Y", "V", "X -> V", "X -> V -> Y", "X -> M -> V"), useU = TRUE,
-  UQ = FALSE, IIVQ = FALSE, centerU = 0, centerIIV = 0,
-  totaliter = 2000, warmup = 1000, chains = 1, inits = NULL, modelfit,
-  autoDrop = TRUE, opts = list(SD_Tol = 0.01, pars = NULL), ...,
-  template_only = FALSE)
+varian(
+  y.formula,
+  v.formula,
+  m.formula,
+  data,
+  design = c("V -> Y", "V -> M -> Y", "V", "X -> V", "X -> V -> Y", "X -> M -> V"),
+  useU = TRUE,
+  UQ = FALSE,
+  IIVQ = FALSE,
+  centerU = 0,
+  centerIIV = 0,
+  totaliter = 2000,
+  warmup = 1000,
+  chains = 1,
+  inits = NULL,
+  modelfit,
+  autoDrop = TRUE,
+  opts = list(SD_Tol = 0.01, pars = NULL),
+  ...,
+  template_only = FALSE
+)
 }
 \arguments{
 \item{y.formula}{A formula describing a model for the outcome.  At present,
@@ -115,7 +129,8 @@ parameters.
       ID = Data$ID2)
   })
   m <- varian(y2 ~ x1 + x2, y ~ 1 | ID, data = sim.data, design = "V -> Y",
-    totaliter = 10000, warmup = 1500, thin = 10, chains = 4, verbose=TRUE)
+    totaliter = 10000, warmup = 1500, thin = 10, chains = 4, cores = 4,
+    verbose=TRUE)
 
   # check diagnostics
   vm_diagnostics(m)
@@ -133,13 +148,13 @@ parameters.
   })
   # warning: may take several minutes
   m2 <- varian(y2 ~ x1 + x2, y ~ 1 | ID, data = sim.data2, design = "V -> Y",
-    totaliter = 10000, warmup = 1500, thin = 10, chains = 4, verbose=TRUE)
+    totaliter = 10000, warmup = 1500, thin = 10, chains = 4, cores = 4,
+    verbose=TRUE)
   # check diagnostics
   vm_diagnostics(m2)
 }
 }
 \author{
-Joshua F. Wiley <josh@elkhartgroup.com>
+Joshua F. Wiley <jwiley.psych@gmail.com>
 }
 \keyword{models}
-

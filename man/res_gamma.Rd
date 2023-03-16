@@ -31,7 +31,6 @@ ID <- rep(1:100, each = 10)
 res_gamma(x, ID)
 }
 \author{
-Joshua F. Wiley <josh@elkhartgroup.com>
+Joshua F. Wiley <jwiley.psych@gmail.com>
 }
 \keyword{utilities}
-

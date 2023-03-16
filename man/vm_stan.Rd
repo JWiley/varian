@@ -4,9 +4,16 @@
 \alias{vm_stan}
 \title{Create a Stan class VM object}
 \usage{
-vm_stan(design = c("V -> Y", "V -> M -> Y", "V", "X -> V", "X -> V -> Y",
-  "X -> M -> V"), useU = TRUE, UQ = FALSE, IIVQ = FALSE, centerU = 0,
-  centerIIV = 0, ..., template_only = FALSE)
+vm_stan(
+  design = c("V -> Y", "V -> M -> Y", "V", "X -> V", "X -> V -> Y", "X -> M -> V"),
+  useU = TRUE,
+  UQ = FALSE,
+  IIVQ = FALSE,
+  centerU = 0,
+  centerIIV = 0,
+  ...,
+  template_only = FALSE
+)
 }
 \arguments{
 \item{design}{A character string indicating the type of model to be run.  One of
@@ -55,7 +62,6 @@ varian:::vm_stan("V -> Y", useU=TRUE, UQ = TRUE, IIVQ = TRUE, template_only = TR
 varian:::vm_stan("V -> M -> Y", useU=TRUE, UQ = TRUE, IIVQ = TRUE, template_only = TRUE)
 }
 \author{
-Joshua F. Wiley <josh@elkhartgroup.com>
+Joshua F. Wiley <jwiley.psych@gmail.com>
 }
 \keyword{models}
-
