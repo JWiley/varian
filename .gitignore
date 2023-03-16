@@ -1,6 +1,7 @@
 .Rhistory
 .RData
 desktop.ini
+.DS_Store
 
 # ignore emacs files
 *~

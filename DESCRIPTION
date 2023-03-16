@@ -1,23 +1,25 @@
 Package: varian
-Type: Package
-Version: 0.3.0
 Title: Variability Analysis in R
-Description: Uses a Bayesian model to
-    estimate the variability in a repeated
-    measure outcome and use that as an outcome or a predictor
-    in a second stage model.
+Version: 0.3.0
 Date: 2023-03-16
-Author: Joshua F. Wiley [aut, cre],
-    Elkhart Group Limited [cph]
-Maintainer: Joshua F. Wiley <jwiley.psych@gmail.com>
-URL: https://github.com/JWiley/varian
+Authors@R: 
+    person(given = "Joshua F.",
+           family = "Wiley",
+           role = c("aut", "cre"),
+           email = "jwiley.psych@gmail.com",
+           comment = c(ORCID = "0000-0002-0271-6702"))	   
+URL: https://joshuawiley.com/varian, https://github.com/JWiley/varian
 BugReports: https://github.com/JWiley/varian/issues
+Description: Uses a Bayesian model to
+  estimate the variability in a repeated
+  measure outcome and use that as an outcome or a predictor
+  in a second stage model.
 Depends:
-    R (>= 4.0.0),
-    rstan (>= 2.21.0),
-    ggplot2
+    R (>= 4.0.0)
 Imports:
     stats,
+    rstan (>= 2.21.0),
+    ggplot2    
     JWileymisc,
     extraoperators,
     MASS,
@@ -27,7 +29,9 @@ Imports:
 Suggests:
     shinystan,
     testthat
-LazyLoad: yes
 License: MIT + file LICENSE
 Encoding: UTF-8
+LazyData: true
+Config/testthat/edition: 3
+VignetteBuilder: knitr
 RoxygenNote: 7.2.3

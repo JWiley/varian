@@ -1,3 +1,13 @@
+varian
+======================
+
+<!-- badges: start -->
+[![CRAN_status](https://www.r-pkg.org/badges/version/varian)](https://cran.r-project.org/package=varian)
+[![R-CMD-check](https://github.com/JWiley/varian/workflows/R-CMD-check/badge.svg)](https://github.com/JWiley/varian/actions)
+[![codecov](https://codecov.io/gh/JWiley/varian/branch/main/graph/badge.svg?token=HK1Ns92mfB)](https://codecov.io/gh/JWiley/varian)
+[![lifecycle](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
+<!-- badges: end -->
+
 `varian` is a free, open source `R` package for *vari*ability
 *an*alysis using Bayesian inference.
 

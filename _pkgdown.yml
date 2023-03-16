@@ -1,0 +1,26 @@
+url: https://joshuawiley.com/varian
+
+home:
+  title: varian
+  description: Variability Analysis
+
+authors:
+  Joshua F. Wiley:
+    href: https://joshuawiley.com
+
+destination: docs
+
+footer:
+  structure:
+    left: developed_by
+    right: built_with
+
+template:
+  package: preferably
+  bootstrap: 5
+
+  opengraph:
+    twitter:
+      creator: "@WileyResearch"
+      site: https://joshuawiley.com
+  

@@ -1,21 +1,27 @@
-context("Variability Helper Functions")
-
 test_that("rmssd estimates correctly", {
-  expect_that(rmssd(1:4), equals(1))
+  expect_equal(rmssd(1:4), 1)
 })
 
 test_that("rmssd by ID estimates correctly", {
-  expect_that(rmssd_id(c(1:3, 1, 3, 5), rep(1:2, each = 3), FALSE), is_equivalent_to(array(c(1, 2))))
+  expect_equal(
+    rmssd_id(c(1:3, 1, 3, 5), rep(1:2, each = 3), FALSE),
+    array(c(1, 2)))
 })
 
 test_that("sd by ID estimates correctly", {
-  expect_that(sd_id(c(1:3, 1, 3, 5), rep(1:2, each = 3), FALSE), is_equivalent_to(array(c(1, 2))))
+  expect_equal(
+    sd_id(c(1:3, 1, 3, 5), rep(1:2, each = 3), FALSE),
+    array(c(1, 2)))
 })
 
 test_that("rolling_diff estimates correctly", {
-  expect_that(rolling_diff(1:4, 4), is_equivalent_to(3))
+  expect_equal(
+    rolling_diff(1:4, 4),
+    3)
 })
 
 test_that("rolling_diff by ID estimates correctly", {
-  expect_that(rolling_diff_id(c(1:4, 1, 3, 5, 7), rep(1:2, each = 4), FALSE, 4), is_equivalent_to(array(c(3, 6))))
+  expect_equal(
+    rolling_diff_id(c(1:4, 1, 3, 5, 7), rep(1:2, each = 4), FALSE, 4),
+    array(c(3, 6)))
 })
