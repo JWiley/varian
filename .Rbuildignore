@@ -7,3 +7,4 @@
 \.Rhistory
 ^.\..~$
 desktop.ini
+.DS_Store
