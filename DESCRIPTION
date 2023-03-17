@@ -19,7 +19,7 @@ Depends:
 Imports:
     stats,
     rstan (>= 2.21.0),
-    ggplot2    
+    ggplot2,
     JWileymisc,
     extraoperators,
     MASS,

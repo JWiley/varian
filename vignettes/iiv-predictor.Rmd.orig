@@ -21,3 +21,70 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 ```
+
+
+```{r}
+## options to use multiple cores for processing
+rstan::rstan_options(auto_write = TRUE)
+options(mc.cores = 6L)
+
+## load package
+library(varian)
+## package for data management
+library(data.table)
+
+
+## load a daily dataset
+data(aces_daily, package = "JWileymisc")
+
+## choose only needed variables
+usedat <- as.data.table(aces_daily)[,
+  .(UserID, SurveyDay, SurveyInteger, Age,
+    STRESS, PosAff, NegAff)]
+
+## drop any missing values
+## note this is a long dataset
+usedat <- na.omit(usedat)
+## only select participants with at least 3 non missing surveys completed
+usedat <- usedat[
+  UserID %in% usedat[, .(Count = .N), by = UserID][Count > 3, UserID]]
+
+## make a between person only variable as an outcome for varian
+usedat[, BNegAff := mean(NegAff, na.rm = TRUE), by = UserID]
+
+m <- varian(
+  BNegAff ~ Age,
+  STRESS ~ 1 | UserID,
+  data = usedat, design = "V -> Y", useU = TRUE,
+  totaliter = 10000, warmup = 2000, chains = 4, verbose = TRUE)
+
+vm_diagnostics(m)
+
+## extract MCMC samples
+mcmc.samples <- extract(m$results,
+  permute = TRUE)
+
+
+vmp_plot(extract(m$results)$Yalpha)
+
+summary(m$results)
+
+
+
+m.paiiv <- varian(
+  BNegAff ~ Age,
+  PosAff ~ 1 | UserID,
+  data = usedat, design = "V -> Y", useU = TRUE,
+  totaliter = 15000, warmup = 2000,
+  thin = 5, chains = 6, verbose = TRUE)
+
+vm_diagnostics(m.paiiv)
+
+# extract MCMC samples
+mcmc.paiiv <- extract(m.paiiv$results,
+  permute = TRUE)
+
+vmp_plot(mcmc.paiiv$Yalpha)
+
+
+```
